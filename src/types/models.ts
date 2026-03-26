@@ -15,6 +15,8 @@ export type Material = {
   recommendationReason: string;
   provenanceType: "internal" | "web";
   confidence: number;
+  snippet?: string;
+  candidateType?: "video" | "article" | "book" | "documentation" | "tutorial" | "other";
 };
 
 export type Problem = {
