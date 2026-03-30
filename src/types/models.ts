@@ -1,5 +1,55 @@
 export type UserRole = "Student" | "Professor";
 
+export type TopicLevel = "beginner" | "intermediate" | "advanced";
+
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  created_at: string;
+};
+
+export type AuthResponse = {
+  token: string;
+  user: User;
+};
+
+export type Topic = {
+  id: string;
+  title: string;
+  level: TopicLevel;
+  created_at: string;
+  user_id: string;
+};
+
+export type SearchResult = {
+  title: string;
+  url: string;
+  type: "video" | "article" | "book" | "documentation" | "tutorial" | "other";
+  source: string;
+  snippet: string;
+  reason_for_inclusion: string;
+  confidence: number;
+};
+
+export type TopicDetail = Topic & {
+  learning_materials: SearchResult[];
+  roadmap: string[];
+  exercises: string[];
+  coding_tasks: string[];
+};
+
+export type SearchMaterialsResponse = {
+  topic: string;
+  query_used: string;
+  results: SearchResult[];
+  search_metadata: {
+    timestamp: string;
+    total_results: number;
+    notes: string;
+  };
+};
+
 export type Material = {
   id: string;
   title: string;

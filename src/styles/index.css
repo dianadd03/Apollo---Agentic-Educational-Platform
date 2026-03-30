@@ -3,21 +3,34 @@
 @tailwind utilities;
 
 :root {
-  --background: 210 20% 98%;
-  --foreground: 222 47% 11%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --primary: 221 83% 53%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 24% 95%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 210 20% 96%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 191 96% 91%;
-  --accent-foreground: 222 47% 11%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 221 83% 53%;
+  /* Dark Slate Background */
+  --background: 225 18% 9%;
+  /* Parchment Foreground */
+  --foreground: 38 48% 90%;
+  
+  --card: 225 17% 12%;
+  --card-foreground: 38 48% 90%;
+  
+  /* Vintage Gold Primary */
+  --primary: 40 43% 57%;
+  --primary-foreground: 225 18% 9%;
+  
+  /* Deep Burgundy Secondary */
+  --secondary: 345 38% 22%;
+  --secondary-foreground: 38 48% 90%;
+  
+  /* Slate Muted */
+  --muted: 225 15% 18%;
+  --muted-foreground: 225 12% 65%;
+  
+  /* Forest Accent */
+  --accent: 154 22% 28%;
+  --accent-foreground: 38 48% 90%;
+  
+  /* Dark Antique Border */
+  --border: 225 15% 18%;
+  --input: 225 15% 18%;
+  --ring: 40 43% 57%;
 }
 
 @layer base {
@@ -26,9 +39,22 @@
   }
 
   body {
-    @apply bg-background font-sans text-foreground antialiased;
-    background-image: radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 25%),
-      radial-gradient(circle at top right, rgba(14, 165, 233, 0.08), transparent 18%);
+    @apply min-h-screen bg-background text-foreground antialiased;
+    font-family: "Manrope", "Segoe UI", sans-serif;
+    background-image:
+      radial-gradient(circle at top left, rgba(194, 159, 96, 0.08), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(78, 35, 46, 0.15), transparent 40%),
+      linear-gradient(180deg, #12141a 0%, #0d0f13 100%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Fraunces", "Cormorant Garamond", Georgia, serif;
+    letter-spacing: -0.01em;
   }
 
   button,
@@ -37,18 +63,55 @@
   textarea {
     @apply outline-none;
   }
+
+  #root {
+    @apply min-h-screen;
+  }
 }
 
 @layer components {
+  .library-shell {
+    @apply relative min-h-screen overflow-hidden;
+  }
+
+  .library-shell::before {
+    content: "";
+    @apply pointer-events-none absolute inset-0 opacity-100 mix-blend-overlay;
+    background:
+      radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.8) 150%);
+    z-index: 50;
+  }
+
   .glass-panel {
-    @apply rounded-2xl border border-white/50 bg-white/80 shadow-soft backdrop-blur-xl;
+    @apply rounded-[32px] border border-[#c29f60]/10 bg-[#161820]/80 shadow-[0_26px_70px_rgba(0,0,0,0.5)] backdrop-blur-md;
   }
 
   .subtle-panel {
-    @apply rounded-2xl border bg-white shadow-sm;
+    @apply rounded-[28px] border border-[#c29f60]/10 bg-[#15171e]/95 shadow-[0_18px_48px_rgba(0,0,0,0.4)];
   }
 
   .section-title {
-    @apply text-lg font-semibold tracking-tight text-slate-900;
+    @apply text-2xl font-semibold tracking-tight text-[#f4ead6];
+  }
+
+  .library-copy {
+    @apply text-sm leading-7 text-[#dccfa6];
+  }
+
+  .bookshelf-plank {
+    @apply relative rounded-[16px] border border-[#3b281b] bg-[linear-gradient(180deg,#1c120c_0%,#0e0a07_100%)] px-5 py-6 shadow-[0_24px_50px_rgba(0,0,0,0.6)];
+  }
+
+  .bookshelf-plank::before {
+    content: "";
+    @apply absolute inset-x-5 bottom-3 h-4 rounded-full;
+    background: rgba(0, 0, 0, 0.5);
+    filter: blur(12px);
+  }
+
+  .bookshelf-rail {
+    @apply absolute inset-x-6 bottom-0 h-4 rounded-b-[12px] bg-[linear-gradient(180deg,#4a3322,#261810)] border-t border-[#65452d] shadow-[0_8px_16px_rgba(0,0,0,0.5)];
   }
 }
+
+

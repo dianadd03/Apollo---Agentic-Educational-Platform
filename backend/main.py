@@ -3,7 +3,9 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.api.routes.auth import router as auth_router
 from backend.api.routes.search import router as search_router
+from backend.api.routes.topics import router as topics_router
 from backend.config import get_settings
 
 settings = get_settings()
@@ -13,7 +15,7 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
 
-app = FastAPI(title=settings.app_name, version="0.1.0")
+app = FastAPI(title=settings.app_name, version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,4 +31,6 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+app.include_router(auth_router)
+app.include_router(topics_router)
 app.include_router(search_router)
