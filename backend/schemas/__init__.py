@@ -1,1 +1,1 @@
-"""Pydantic schemas."""
+"""Additional backend schemas."""

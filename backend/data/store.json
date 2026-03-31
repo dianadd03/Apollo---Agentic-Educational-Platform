@@ -1,0 +1,33 @@
+{
+  "users": [
+    {
+      "id": "ff46cfed-7706-4380-90b7-edb3b7cc76d1",
+      "name": "Diana",
+      "email": "dianador2005@gmail.com",
+      "password_hash": "a3e7048c8174ca2b942b299137c204df4bde7fd32c27ef8611f9f82d443c7af2",
+      "created_at": "2026-03-30T13:54:33.415204+00:00"
+    }
+  ],
+  "topics": [
+    {
+      "id": "cff10554-a6ec-4df9-9923-5375853eae76",
+      "title": "graphs",
+      "level": "beginner",
+      "created_at": "2026-03-30T13:55:00.883193",
+      "user_id": "ff46cfed-7706-4380-90b7-edb3b7cc76d1"
+    },
+    {
+      "id": "07f98766-1700-4a17-8460-d9ecfa1f6658",
+      "title": "grafuri",
+      "level": "beginner",
+      "created_at": "2026-03-30T13:55:41.284801",
+      "user_id": "ff46cfed-7706-4380-90b7-edb3b7cc76d1"
+    }
+  ],
+  "sessions": {
+    "dh7yT82qEe7VghTEE0WbMyT2Kf0kINba3utqoQbyN_o": {
+      "user_id": "ff46cfed-7706-4380-90b7-edb3b7cc76d1",
+      "created_at": "2026-03-30T13:54:33.415837+00:00"
+    }
+  }
+}

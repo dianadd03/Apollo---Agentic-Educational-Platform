@@ -9,12 +9,12 @@ export function Badge({ className, tone = "default", ...props }: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
-        tone === "default" && "bg-slate-100 text-slate-700",
-        tone === "success" && "bg-emerald-50 text-emerald-700",
-        tone === "warning" && "bg-amber-50 text-amber-700",
-        tone === "danger" && "bg-rose-50 text-rose-700",
-        tone === "info" && "bg-sky-50 text-sky-700",
+        "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] border",
+        tone === "default" && "bg-[#1c1e26] text-[#dccfa6] border-[#c29f60]/20",
+        tone === "success" && "bg-[#121e14] text-[#8fa68a] border-[#243b29]/40",
+        tone === "warning" && "bg-[#2c221d] text-[#c29f60] border-[#4e232e]/40",
+        tone === "danger" && "bg-[#2a0e12] text-[#c26060] border-[#4e1c24]/40",
+        tone === "info" && "bg-[#1c2e4a] text-[#8fa6c2] border-[#2c3e57]/40",
         className,
       )}
       {...props}
