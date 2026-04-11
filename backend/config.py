@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     max_results: int = Field(default=8, ge=1, le=20)
     tavily_api_key: str | None = None
     frontend_origin: str = "http://localhost:5173"
+    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/apollo"
+    embedding_dimensions: int = Field(default=1536, ge=1, le=8192)
+    uploads_dir: str = "backend/data/uploads"
 
 
 @lru_cache(maxsize=1)

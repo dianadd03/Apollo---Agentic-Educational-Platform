@@ -1,5 +1,6 @@
 import type { AgentRun, Material, TopicWorkspaceData } from "@/types/models";
 import { emptyWorkspace, findWorkspaceForTopic } from "@/data/mockData";
+import { api } from "@/services/api";
 
 export type SearchMaterialRequest = {
   topic: string;
@@ -7,6 +8,7 @@ export type SearchMaterialRequest = {
 };
 
 export type CandidateMaterialResult = {
+  material_id?: string | null;
   title: string;
   url: string;
   type: "video" | "article" | "book" | "documentation" | "tutorial" | "other";
@@ -14,16 +16,25 @@ export type CandidateMaterialResult = {
   snippet: string;
   reason_for_inclusion: string;
   confidence: number;
+  score?: number | null;
+  like_count?: number;
+  user_has_liked?: boolean;
+  is_verified?: boolean;
+  is_internal?: boolean;
+  source_of_result?: string;
 };
 
 export type SearchMaterialsResponse = {
   topic: string;
+  topic_id?: string | null;
   query_used: string;
   results: CandidateMaterialResult[];
   search_metadata: {
     timestamp: string;
     total_results: number;
     notes: string;
+    coverage_source?: "db_internal" | "db_internal_with_web_fallback" | "web_only" | "cached";
+    search_result_id?: string | null;
   };
 };
 
@@ -37,19 +48,7 @@ const formatMap: Record<CandidateMaterialResult["type"], Material["format"]> = {
 };
 
 export async function searchMaterials(payload: SearchMaterialRequest): Promise<SearchMaterialsResponse> {
-  const response = await fetch("/api/search-materials", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Search request failed with status ${response.status}`);
-  }
-
-  return (await response.json()) as SearchMaterialsResponse;
+  return api.searchMaterials(payload.topic, payload.max_results);
 }
 
 export function buildWorkspaceFromSearch(topic: string, response: SearchMaterialsResponse): TopicWorkspaceData {
@@ -64,7 +63,12 @@ export function buildWorkspaceFromSearch(topic: string, response: SearchMaterial
   return {
     ...(baseWorkspace.topic === "Unknown Topic" ? emptyWorkspace : baseWorkspace),
     topic: response.topic,
-    searchMode: mappedMaterials.length > 0 ? "web-fallback" : "empty",
+    searchMode:
+      response.search_metadata.coverage_source === "db_internal"
+        ? "internal"
+        : mappedMaterials.length > 0
+          ? "web-fallback"
+          : "empty",
     summary,
     materials: mappedMaterials,
     run: buildSearchRun(response),
@@ -72,23 +76,24 @@ export function buildWorkspaceFromSearch(topic: string, response: SearchMaterial
 }
 
 function mapCandidateToMaterial(item: CandidateMaterialResult, topic: string, index: number): Material {
-  const relevanceScore = Math.max(50, Math.round(item.confidence * 100));
+  const confidenceBasis = item.score ?? item.confidence;
+  const relevanceScore = Math.max(50, Math.round(confidenceBasis * 100));
   const qualityScore = Math.max(45, Math.round(item.confidence * 100));
 
   return {
-    id: `search-${slugify(topic)}-${index + 1}`,
+    id: item.material_id ?? `search-${slugify(topic)}-${index + 1}`,
     title: item.title,
     url: item.url,
     source: item.source,
     format: formatMap[item.type],
     difficulty: inferDifficulty(item),
-    topicWeights: { [topic]: item.confidence },
+    topicWeights: { [topic]: confidenceBasis },
     prerequisites: [],
-    validationStatus: "Pending",
+    validationStatus: item.is_verified ? "Validated" : "Pending",
     qualityScore,
     relevanceScore,
     recommendationReason: item.reason_for_inclusion,
-    provenanceType: "web",
+    provenanceType: item.is_internal ? "internal" : "web",
     confidence: item.confidence,
     snippet: item.snippet,
     candidateType: item.type,
@@ -131,11 +136,14 @@ function buildSearchRun(response: SearchMaterialsResponse): AgentRun {
       {
         id: `ranking-${slugify(response.topic)}`,
         name: "Ranking",
-        status: "Queued",
+        status: response.search_metadata.coverage_source === "db_internal" ? "Completed" : "Queued",
         timestamp: response.search_metadata.timestamp,
-        confidence: 0,
+        confidence: response.results.length ? averageConfidence(response.results) : 0,
         retries: 0,
-        notes: "Final ranking is deferred until review-agent validation is available.",
+        notes:
+          response.search_metadata.coverage_source === "db_internal"
+            ? "Internal ranking completed from Apollo materials before any web fallback."
+            : "Final ranking included web fallback because internal coverage was insufficient.",
       },
     ],
   };

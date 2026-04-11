@@ -1,6 +1,7 @@
 import { BookOpenCheck, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import type { UserRole } from "@/types/models";
 
 type AuthFormProps = {
   mode: "login" | "register";
@@ -8,8 +9,9 @@ type AuthFormProps = {
     name: string;
     email: string;
     password: string;
+    role?: UserRole;
   };
-  onChange: (field: "name" | "email" | "password", value: string) => void;
+  onChange: (field: "name" | "email" | "password" | "role", value: string) => void;
   onSubmit: () => void;
   loading: boolean;
   error: string | null;
@@ -30,7 +32,18 @@ export function AuthForm({ mode, values, onChange, onSubmit, loading, error }: A
 
       <div className="space-y-4">
         {mode === "register" ? (
-          <Input placeholder="Full name" value={values.name} onChange={(event) => onChange("name", event.target.value)} />
+          <>
+            <Input placeholder="Full name" value={values.name} onChange={(event) => onChange("name", event.target.value)} />
+            <select
+              className="w-full rounded-2xl border border-[#c29f60]/20 bg-[#12141a]/80 px-4 py-3 text-sm text-[#f4ead6]"
+              value={values.role ?? "student"}
+              onChange={(event) => onChange("role", event.target.value)}
+            >
+              <option value="student">Student</option>
+              <option value="professor">Professor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </>
         ) : null}
         <Input placeholder="Email address" type="email" value={values.email} onChange={(event) => onChange("email", event.target.value)} />
         <Input placeholder="Password" type="password" value={values.password} onChange={(event) => onChange("password", event.target.value)} />
@@ -45,4 +58,3 @@ export function AuthForm({ mode, values, onChange, onSubmit, loading, error }: A
     </div>
   );
 }
-
