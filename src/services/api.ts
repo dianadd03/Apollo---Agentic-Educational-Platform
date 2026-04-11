@@ -1,4 +1,4 @@
-import type { AuthResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, User } from "@/types/models";
+import type { AuthResponse, ManagedMaterialResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_STORAGE_KEY = "apollo-library-token";
@@ -17,7 +17,9 @@ export function clearToken() {
 
 async function apiFetch<T>(path: string, init: RequestInit = {}, auth = false): Promise<T> {
   const headers = new Headers(init.headers);
-  headers.set("Content-Type", "application/json");
+  if (!(init.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
 
   if (auth) {
     const token = getToken();
@@ -48,10 +50,10 @@ export const api = {
       body: JSON.stringify({ email, password }),
     });
   },
-  register(name: string, email: string, password: string) {
+  register(name: string, email: string, password: string, role: UserRole = "student") {
     return apiFetch<AuthResponse>("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, role }),
     });
   },
   me() {
@@ -69,10 +71,31 @@ export const api = {
   getTopic(topicId: string) {
     return apiFetch<TopicDetail>(`/api/topics/${topicId}`, {}, true);
   },
-  searchMaterials(topic: string) {
+  searchMaterials(topic: string, maxResults?: number) {
     return apiFetch<SearchMaterialsResponse>("/api/search-materials", {
       method: "POST",
-      body: JSON.stringify({ topic }),
-    });
+      body: JSON.stringify({ topic, max_results: maxResults }),
+    }, true);
+  },
+  uploadMaterial(formData: FormData) {
+    return apiFetch<UploadedMaterialResponse>("/api/materials/upload", {
+      method: "POST",
+      body: formData,
+    }, true);
+  },
+  getManagedMaterials() {
+    return apiFetch<ManagedMaterialResponse[]>("/api/materials/managed", {}, true);
+  },
+  verifyMaterial(materialId: string, verified: boolean) {
+    return apiFetch<ManagedMaterialResponse>(`/api/materials/${materialId}/verify`, {
+      method: "PATCH",
+      body: JSON.stringify({ verified }),
+    }, true);
+  },
+  setMaterialActive(materialId: string, isActive: boolean) {
+    return apiFetch<ManagedMaterialResponse>(`/api/materials/${materialId}/active`, {
+      method: "PATCH",
+      body: JSON.stringify({ is_active: isActive }),
+    }, true);
   },
 };

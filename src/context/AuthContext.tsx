@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, clearToken, storeToken } from "@/services/api";
-import type { User } from "@/types/models";
+import type { User, UserRole } from "@/types/models";
 
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role?: UserRole) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 };
@@ -46,8 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(response.user);
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    const response = await api.register(name, email, password);
+  const register = async (name: string, email: string, password: string, role: UserRole = "student") => {
+    const response = await api.register(name, email, password, role);
     storeToken(response.token);
     setUser(response.user);
   };
