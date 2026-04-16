@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     max_results: int = Field(default=8, ge=1, le=20)
     tavily_api_key: str | None = None
     frontend_origin: str = "http://localhost:5173"
+    session_cookie_name: str = "apollo_session"
+    session_ttl_hours: int = Field(default=24, ge=1, le=24 * 30)
+    secure_cookies: bool = False
 
 
 @lru_cache(maxsize=1)

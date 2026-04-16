@@ -1,34 +1,14 @@
 import type { AuthResponse, SearchResult, Topic, TopicDetail, TopicLevel, User } from "@/types/models";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
-const TOKEN_STORAGE_KEY = "apollo-library-token";
-
-function getToken() {
-  return localStorage.getItem(TOKEN_STORAGE_KEY);
-}
-
-export function storeToken(token: string) {
-  localStorage.setItem(TOKEN_STORAGE_KEY, token);
-}
-
-export function clearToken() {
-  localStorage.removeItem(TOKEN_STORAGE_KEY);
-}
-
-async function apiFetch<T>(path: string, init: RequestInit = {}, auth = false): Promise<T> {
+async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Content-Type", "application/json");
-
-  if (auth) {
-    const token = getToken();
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
-    }
-  }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -37,11 +17,14 @@ async function apiFetch<T>(path: string, init: RequestInit = {}, auth = false): 
     throw new Error(message);
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return response.json() as Promise<T>;
 }
 
 export const api = {
-  tokenStorageKey: TOKEN_STORAGE_KEY,
   login(email: string, password: string) {
     return apiFetch<AuthResponse>("/api/auth/login", {
       method: "POST",
@@ -55,19 +38,24 @@ export const api = {
     });
   },
   me() {
-    return apiFetch<User>("/api/auth/me", {}, true);
+    return apiFetch<User>("/api/auth/me");
+  },
+  logout() {
+    return apiFetch<void>("/api/auth/logout", {
+      method: "POST",
+    });
   },
   getTopics() {
-    return apiFetch<Topic[]>("/api/topics", {}, true);
+    return apiFetch<Topic[]>("/api/topics");
   },
   createTopic(title: string, level: TopicLevel) {
     return apiFetch<Topic>("/api/topics", {
       method: "POST",
       body: JSON.stringify({ title, level }),
-    }, true);
+    });
   },
   getTopic(topicId: string) {
-    return apiFetch<TopicDetail>(`/api/topics/${topicId}`, {}, true);
+    return apiFetch<TopicDetail>(`/api/topics/${topicId}`);
   },
   searchMaterials(topic: string, advanced = false) {
     return apiFetch<SearchResult[]>("/api/search-materials", {

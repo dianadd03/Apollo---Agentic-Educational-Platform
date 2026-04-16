@@ -13,6 +13,13 @@
       "email": "slatina@gmail.com",
       "password_hash": "a715dbfecd186c0f7cc45015c51574fe04644360bf959f2c894de6f67475acdf",
       "created_at": "2026-03-31T11:52:02.292647+00:00"
+    },
+    {
+      "id": "99ef2dbd-f046-4ff4-a21b-503c072ca4a7",
+      "name": "Stefan",
+      "email": "stefan@gmail.com",
+      "password_hash": "pbkdf2_sha256$600000$GYcN2XqV4oxhR82/N1hs2w==$he+tC/Wa7r4LYXyAY9SNDNU1+j6IGn4hF2+tZ5FxTQ0=",
+      "created_at": "2026-04-16T15:38:09.017321+00:00"
     }
   ],
   "topics": [
@@ -99,22 +106,20 @@
       "level": "beginner",
       "created_at": "2026-04-07T12:51:25.771619",
       "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
+    },
+    {
+      "id": "fffe2a67-6234-4cbb-a01b-bfbea5a8d463",
+      "title": "Graphs",
+      "level": "beginner",
+      "created_at": "2026-04-16T15:38:18.084105",
+      "user_id": "99ef2dbd-f046-4ff4-a21b-503c072ca4a7"
     }
   ],
   "sessions": {
-    "dh7yT82qEe7VghTEE0WbMyT2Kf0kINba3utqoQbyN_o": {
-      "user_id": "ff46cfed-7706-4380-90b7-edb3b7cc76d1",
-      "created_at": "2026-03-30T13:54:33.415837+00:00"
-    },
-<<<<<<< HEAD
-    "fICgEj5jykCKwfC0-BDYlzL8JKT8V3_ULMRAkPmdf7w": {
-      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069",
-      "created_at": "2026-03-31T11:52:02.294541+00:00"
-=======
-    "29fqSyuBBIq6B3uyIaWPp9s09BdfBVt2kZPtKIGiZsc": {
-      "user_id": "ff46cfed-7706-4380-90b7-edb3b7cc76d1",
-      "created_at": "2026-03-31T11:50:07.577945+00:00"
->>>>>>> 666e3f389636cb0b2e0f102c3621a69b9a0fc1f2
+    "6O6TWoH_4lQK0jejv-PSWRWFD-X4xRp5v9Xii3XF9GU": {
+      "user_id": "99ef2dbd-f046-4ff4-a21b-503c072ca4a7",
+      "created_at": "2026-04-16T15:38:09.017357+00:00",
+      "expires_at": "2026-04-17T15:38:09.017357+00:00"
     }
   }
 }

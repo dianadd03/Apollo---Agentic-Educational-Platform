@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { api, clearToken, storeToken } from "@/services/api";
+import { api } from "@/services/api";
 import type { User } from "@/types/models";
 
 type AuthContextValue = {
@@ -22,18 +22,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const currentUser = await api.me();
       setUser(currentUser);
     } catch {
-      clearToken();
       setUser(null);
     }
   };
 
   useEffect(() => {
     const boot = async () => {
-      const token = localStorage.getItem(api.tokenStorageKey);
-      if (!token) {
-        setLoading(false);
-        return;
-      }
       await refreshUser();
       setLoading(false);
     };
@@ -42,18 +36,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const response = await api.login(email, password);
-    storeToken(response.token);
     setUser(response.user);
   };
 
   const register = async (name: string, email: string, password: string) => {
     const response = await api.register(name, email, password);
-    storeToken(response.token);
     setUser(response.user);
   };
 
   const logout = () => {
-    clearToken();
+    void api.logout().catch(() => undefined);
     setUser(null);
   };
 
