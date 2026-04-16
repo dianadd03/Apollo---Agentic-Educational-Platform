@@ -23,13 +23,10 @@ export type Topic = {
 };
 
 export type SearchResult = {
-  title: string;
-  url: string;
-  type: "video" | "article" | "book" | "documentation" | "tutorial" | "other";
-  source: string;
-  snippet: string;
-  reason_for_inclusion: string;
-  confidence: number;
+  kind: string;
+  title: string | null;
+  url: string | null;
+  score: number | null;
 };
 
 export type TopicDetail = Topic & {
@@ -37,17 +34,6 @@ export type TopicDetail = Topic & {
   roadmap: string[];
   exercises: string[];
   coding_tasks: string[];
-};
-
-export type SearchMaterialsResponse = {
-  topic: string;
-  query_used: string;
-  results: SearchResult[];
-  search_metadata: {
-    timestamp: string;
-    total_results: number;
-    notes: string;
-  };
 };
 
 export type Material = {

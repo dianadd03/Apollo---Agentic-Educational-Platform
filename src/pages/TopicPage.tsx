@@ -11,7 +11,13 @@ export function TopicPage() {
   const [topic, setTopic] = useState<TopicDetail | null>(null);
   const [materials, setMaterials] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [advancedSearching, setAdvancedSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const runSearch = async (topicTitle: string, advanced = false) => {
+    const materialResponse = await api.searchMaterials(topicTitle, advanced);
+    setMaterials(materialResponse);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -20,8 +26,7 @@ export function TopicPage() {
       try {
         const detail = await api.getTopic(topicId);
         setTopic(detail);
-        const searchResponse = await api.searchMaterials(detail.title);
-        setMaterials(searchResponse.results);
+        await runSearch(detail.title, false);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unable to load topic details.");
@@ -32,6 +37,19 @@ export function TopicPage() {
     void load();
   }, [topicId]);
 
+  const handleAdvancedSearch = async () => {
+    if (!topic) return;
+    setAdvancedSearching(true);
+    try {
+      await runSearch(topic.title, true);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to rerun advanced search.");
+    } finally {
+      setAdvancedSearching(false);
+    }
+  };
+
   if (!topicId) return <Navigate to="/library" replace />;
 
   return (
@@ -41,9 +59,8 @@ export function TopicPage() {
       ) : error || !topic ? (
         <Card className="p-8 text-sm text-rose-400 border-rose-900 bg-rose-950/40">{error ?? "Topic not found."}</Card>
       ) : (
-        <TopicDetails topic={topic} materials={materials} />
+        <TopicDetails topic={topic} materials={materials} onAdvancedSearch={() => void handleAdvancedSearch()} advancedSearching={advancedSearching} />
       )}
     </AppShell>
   );
 }
-

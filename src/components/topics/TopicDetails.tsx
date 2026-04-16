@@ -1,12 +1,24 @@
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { SearchResult, TopicDetail } from "@/types/models";
 
 type TopicDetailsProps = {
   topic: TopicDetail;
   materials: SearchResult[];
+  onAdvancedSearch: () => void;
+  advancedSearching: boolean;
 };
+
+function getHostname(url: string | null) {
+  if (!url) return "Unknown";
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Unknown";
+  }
+}
 
 function FutureSection({ title, items, emptyLabel }: { title: string; items: string[]; emptyLabel: string }) {
   return (
@@ -25,13 +37,22 @@ function FutureSection({ title, items, emptyLabel }: { title: string; items: str
   );
 }
 
-export function TopicDetails({ topic, materials }: TopicDetailsProps) {
+export function TopicDetails({ topic, materials, onAdvancedSearch, advancedSearching }: TopicDetailsProps) {
   return (
     <div className="space-y-6">
       <Card className="p-7 border-[#c29f60]/30 bg-[#161820]/90 shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-        <div className="flex flex-wrap items-center gap-3">
-          <Badge tone="info" className="capitalize bg-[#2c221d] text-[#c29f60] border border-[#4e232e] shadow-md">{topic.level}</Badge>
-          <Badge tone="default" className="bg-[#12141a] text-[#dccfa6] border-[#c29f60]/20">Saved {new Date(topic.created_at).toLocaleDateString()}</Badge>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge tone="info" className="capitalize bg-[#2c221d] text-[#c29f60] border border-[#4e232e] shadow-md">{topic.level}</Badge>
+            <Badge tone="default" className="bg-[#12141a] text-[#dccfa6] border-[#c29f60]/20">Saved {new Date(topic.created_at).toLocaleDateString()}</Badge>
+          </div>
+          <Button
+            onClick={onAdvancedSearch}
+            disabled={advancedSearching}
+            className="bg-[#c29f60] text-[#1a140f] hover:bg-[#d6b074]"
+          >
+            {advancedSearching ? "Running advanced search..." : "Advanced Search"}
+          </Button>
         </div>
         <h2 className="mt-4 text-5xl font-semibold text-[#f4ead6] font-serif">{topic.title}</h2>
         <p className="mt-4 max-w-3xl text-sm leading-8 text-[#dccfa6]/80">
@@ -45,18 +66,25 @@ export function TopicDetails({ topic, materials }: TopicDetailsProps) {
           <div className="mt-5 space-y-3">
             {materials.map((item) => (
               <a
-                key={item.url}
-                href={item.url}
+                key={item.url ?? `${item.kind}-${item.title ?? "untitled"}`}
+                href={item.url ?? "#"}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-between gap-4 rounded-[20px] border border-[#c29f60]/20 bg-[#1c1e26]/80 px-5 py-4 transition hover:bg-[#2c221d] group"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-[#f4ead6] group-hover:text-[#c29f60] transition-colors">{item.title}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.22em] text-[#a3835b]">{item.type}</p>
+                  <p className="truncate font-semibold text-[#f4ead6] group-hover:text-[#c29f60] transition-colors">{item.title ?? "Untitled result"}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <p className="text-xs uppercase tracking-[0.22em] text-[#a3835b]">{item.kind}</p>
+                    {typeof item.score === "number" ? (
+                      <Badge tone="default" className="bg-[#12141a] text-[#dccfa6] border-[#c29f60]/10">
+                        Score {item.score.toFixed(2)}
+                      </Badge>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <Badge tone="default" className="bg-[#12141a] text-[#dccfa6] border-[#c29f60]/10">{item.source}</Badge>
+                  <Badge tone="default" className="bg-[#12141a] text-[#dccfa6] border-[#c29f60]/10">{getHostname(item.url)}</Badge>
                   <ExternalLink className="h-4 w-4 text-[#c29f60]" />
                 </div>
               </a>
@@ -75,5 +103,3 @@ export function TopicDetails({ topic, materials }: TopicDetailsProps) {
     </div>
   );
 }
-
-

@@ -3,13 +3,9 @@ from pathlib import Path
 
 from fastapi import Depends, Header, HTTPException, status
 
-from backend.agents.search_agent import SearchAgent
-from backend.config import get_settings
 from backend.services.auth_service import AuthService
-from backend.services.material_search_service import MaterialSearchService
 from backend.services.storage_service import JsonStore
 from backend.services.topic_service import TopicService
-from backend.tools.web_search import WebSearchTool
 
 
 @lru_cache(maxsize=1)
@@ -25,14 +21,6 @@ def get_auth_service() -> AuthService:
 @lru_cache(maxsize=1)
 def get_topic_service() -> TopicService:
     return TopicService(store=get_store())
-
-
-@lru_cache(maxsize=1)
-def get_material_search_service() -> MaterialSearchService:
-    settings = get_settings()
-    tool = WebSearchTool(settings)
-    agent = SearchAgent(tool)
-    return MaterialSearchService(search_agent=agent, default_max_results=settings.max_results)
 
 
 def get_current_user(

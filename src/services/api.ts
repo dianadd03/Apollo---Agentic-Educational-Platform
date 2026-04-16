@@ -1,4 +1,4 @@
-import type { AuthResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, User } from "@/types/models";
+import type { AuthResponse, SearchResult, Topic, TopicDetail, TopicLevel, User } from "@/types/models";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_STORAGE_KEY = "apollo-library-token";
@@ -69,10 +69,10 @@ export const api = {
   getTopic(topicId: string) {
     return apiFetch<TopicDetail>(`/api/topics/${topicId}`, {}, true);
   },
-  searchMaterials(topic: string) {
-    return apiFetch<SearchMaterialsResponse>("/api/search-materials", {
+  searchMaterials(topic: string, advanced = false) {
+    return apiFetch<SearchResult[]>("/api/search-materials", {
       method: "POST",
-      body: JSON.stringify({ topic }),
+      body: JSON.stringify({ topic, advanced }),
     });
   },
 };

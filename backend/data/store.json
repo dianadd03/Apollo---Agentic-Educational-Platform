@@ -6,6 +6,13 @@
       "email": "dianador2005@gmail.com",
       "password_hash": "a3e7048c8174ca2b942b299137c204df4bde7fd32c27ef8611f9f82d443c7af2",
       "created_at": "2026-03-30T13:54:33.415204+00:00"
+    },
+    {
+      "id": "34cad55f-6e73-4599-958c-215c0f38c069",
+      "name": "ada",
+      "email": "slatina@gmail.com",
+      "password_hash": "a715dbfecd186c0f7cc45015c51574fe04644360bf959f2c894de6f67475acdf",
+      "created_at": "2026-03-31T11:52:02.292647+00:00"
     }
   ],
   "topics": [
@@ -22,12 +29,86 @@
       "level": "beginner",
       "created_at": "2026-03-30T13:55:41.284801",
       "user_id": "ff46cfed-7706-4380-90b7-edb3b7cc76d1"
+    },
+    {
+      "id": "888e0235-76b0-4bc4-9119-71bee34e699a",
+      "title": "Graphs",
+      "level": "beginner",
+      "created_at": "2026-03-31T11:54:46.100827",
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
+    },
+    {
+      "id": "508f0bc1-7330-4dc6-9096-9ae3122968c2",
+      "title": "RMQ",
+      "level": "beginner",
+      "created_at": "2026-03-31T12:09:32.226723",
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
+    },
+    {
+      "id": "3cc6bf46-817b-499f-aba9-ef1871281174",
+      "title": "Neural Divergence Fields",
+      "level": "advanced",
+      "created_at": "2026-03-31T12:11:14.812977",
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
+    },
+    {
+      "id": "cc5e8940-189e-4506-b92e-8d9ff9d28461",
+      "title": "Graphs",
+      "level": "advanced",
+      "created_at": "2026-03-31T12:22:51.445329",
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
+    },
+    {
+      "id": "8bde7457-410b-48aa-8f44-a351013e2464",
+      "title": "Graphs Computer Science",
+      "level": "beginner",
+      "created_at": "2026-03-31T12:24:16.715878",
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
+    },
+    {
+      "id": "863b6210-ea39-4464-aa7a-e1e99bd38a90",
+      "title": "Graphs Computer Science",
+      "level": "advanced",
+      "created_at": "2026-03-31T12:29:14.416604",
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
+    },
+    {
+      "id": "5f450577-d320-457b-ae61-863e07fc3cd9",
+      "title": "Graphs",
+      "level": "beginner",
+      "created_at": "2026-04-07T11:13:26.027007",
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
+    },
+    {
+      "id": "96bb4548-1343-4835-ab47-dbbe17e890f6",
+      "title": "Neural Radiance Fields",
+      "level": "beginner",
+      "created_at": "2026-04-07T11:13:54.774278",
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
+    },
+    {
+      "id": "b3e3d76c-7d49-45a6-a1f8-292958e0111a",
+      "title": "Graphs Computer Science",
+      "level": "beginner",
+      "created_at": "2026-04-07T11:53:47.146584",
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
+    },
+    {
+      "id": "6ab8ff17-d93c-489f-8f1f-f59bea7c4d78",
+      "title": "Graphs",
+      "level": "beginner",
+      "created_at": "2026-04-07T12:51:25.771619",
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069"
     }
   ],
   "sessions": {
     "dh7yT82qEe7VghTEE0WbMyT2Kf0kINba3utqoQbyN_o": {
       "user_id": "ff46cfed-7706-4380-90b7-edb3b7cc76d1",
       "created_at": "2026-03-30T13:54:33.415837+00:00"
+    },
+    "fICgEj5jykCKwfC0-BDYlzL8JKT8V3_ULMRAkPmdf7w": {
+      "user_id": "34cad55f-6e73-4599-958c-215c0f38c069",
+      "created_at": "2026-03-31T11:52:02.294541+00:00"
     }
   }
 }
