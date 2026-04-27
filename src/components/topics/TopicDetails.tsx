@@ -9,8 +9,6 @@ type TopicDetailsProps = {
   materials: SearchResult[];
 };
 
-const TRUSTED_TOPIC_THRESHOLD = 0.55;
-
 function FutureSection({ title, items, emptyLabel }: { title: string; items: string[]; emptyLabel: string }) {
   return (
     <Card className="p-5 border-[#c29f60]/20 bg-[linear-gradient(135deg,#1c1e26,#15171e)]">
@@ -32,10 +30,6 @@ function isTrustedSource(item: SearchResult) {
   return ["admin", "professor", "verified"].includes(item.source_of_result ?? "");
 }
 
-function relevanceValue(item: SearchResult) {
-  return item.score ?? item.confidence;
-}
-
 function sourceBadgeLabel(item: SearchResult) {
   switch (item.source_of_result) {
     case "admin":
@@ -49,7 +43,7 @@ function sourceBadgeLabel(item: SearchResult) {
     case "db_internal":
       return "Internal";
     case "web":
-      return "Web fallback";
+      return "Web search";
     default:
       return item.is_internal ? "Internal" : "External";
   }
@@ -70,9 +64,46 @@ function sourceBadgeTone(item: SearchResult): "success" | "warning" | "info" | "
   }
 }
 
+type ReviewData = {
+  format?: string;
+  title?: string;
+  material_quality_score?: number;
+  ease_of_understanding_score?: number;
+  level?: string;
+};
+
+function parseReviewData(item: SearchResult): ReviewData | null {
+  const value = item.review_data;
+  if (!value || typeof value !== "object") return null;
+  return value as ReviewData;
+}
+
+function scoreTone(value?: number): string {
+  if (typeof value !== "number") return "bg-[#1f2430] text-[#dccfa6]";
+  if (value >= 80) return "bg-emerald-950/70 text-emerald-200";
+  if (value >= 60) return "bg-amber-950/70 text-amber-200";
+  return "bg-rose-950/70 text-rose-200";
+}
+
+function levelRank(level?: string): number {
+  switch ((level ?? "").toLowerCase()) {
+    case "beginner":
+      return 0;
+    case "intermediate":
+      return 1;
+    case "advanced":
+      return 2;
+    case "expert":
+      return 3;
+    default:
+      return 4;
+  }
+}
+
 function MaterialCard({ item }: { item: SearchResult }) {
   const href = resolveMaterialUrl(item.url);
   const isTrusted = isTrustedSource(item);
+  const review = parseReviewData(item);
 
   return (
     <a
@@ -88,9 +119,30 @@ function MaterialCard({ item }: { item: SearchResult }) {
             <p className="truncate font-semibold text-[#f4ead6] group-hover:text-[#c29f60] transition-colors">{item.title}</p>
             <Badge tone={sourceBadgeTone(item)} className="border-[#c29f60]/15">{sourceBadgeLabel(item)}</Badge>
             {item.is_verified ? <Badge tone="success">Trusted</Badge> : null}
+            {review?.level ? <Badge tone="info" className="capitalize">{review.level}</Badge> : null}
           </div>
           <p className="mt-2 text-xs uppercase tracking-[0.22em] text-[#a3835b]">{item.type}</p>
           {item.snippet ? <p className="mt-3 text-sm leading-7 text-[#dccfa6]/75">{item.snippet}</p> : null}
+          {review ? (
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-[#c29f60]/10 bg-[#12141a]/70 p-3">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[#a3835b]">Format</p>
+                <p className="mt-2 text-sm font-medium capitalize text-[#f4ead6]">{review.format ?? "Unknown"}</p>
+              </div>
+              <div className={`rounded-2xl border border-transparent p-3 ${scoreTone(review.material_quality_score)}`}>
+                <p className="text-[10px] uppercase tracking-[0.18em] opacity-75">Quality</p>
+                <p className="mt-2 text-sm font-medium">{typeof review.material_quality_score === "number" ? `${review.material_quality_score}/100` : "N/A"}</p>
+              </div>
+              <div className={`rounded-2xl border border-transparent p-3 ${scoreTone(review.ease_of_understanding_score)}`}>
+                <p className="text-[10px] uppercase tracking-[0.18em] opacity-75">Ease</p>
+                <p className="mt-2 text-sm font-medium">{typeof review.ease_of_understanding_score === "number" ? `${review.ease_of_understanding_score}/100` : "N/A"}</p>
+              </div>
+              <div className="rounded-2xl border border-[#c29f60]/10 bg-[#12141a]/70 p-3">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[#a3835b]">Level</p>
+                <p className="mt-2 text-sm font-medium capitalize text-[#f4ead6]">{review.level ?? "Unknown"}</p>
+              </div>
+            </div>
+          ) : null}
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#dccfa6]/65">
             <span>{item.source}</span>
             {typeof item.like_count === "number" ? <span>Likes: {item.like_count}</span> : null}
@@ -107,9 +159,17 @@ function MaterialCard({ item }: { item: SearchResult }) {
 }
 
 export function TopicDetails({ topic, materials }: TopicDetailsProps) {
-  const visibleMaterials = materials.filter((item) => !isTrustedSource(item) || relevanceValue(item) >= TRUSTED_TOPIC_THRESHOLD);
-  const trustedMaterials = visibleMaterials.filter((item) => isTrustedSource(item) && relevanceValue(item) >= TRUSTED_TOPIC_THRESHOLD);
-  const otherMaterials = visibleMaterials.filter((item) => !trustedMaterials.includes(item));
+  const sortedMaterials = [...materials].sort((left, right) => {
+    const leftReview = parseReviewData(left);
+    const rightReview = parseReviewData(right);
+
+    const levelDifference = levelRank(leftReview?.level) - levelRank(rightReview?.level);
+    if (levelDifference !== 0) return levelDifference;
+
+    const leftEase = typeof leftReview?.ease_of_understanding_score === "number" ? leftReview.ease_of_understanding_score : -1;
+    const rightEase = typeof rightReview?.ease_of_understanding_score === "number" ? rightReview.ease_of_understanding_score : -1;
+    return rightEase - leftEase;
+  });
 
   return (
     <div className="space-y-6">
@@ -117,7 +177,7 @@ export function TopicDetails({ topic, materials }: TopicDetailsProps) {
         <div className="flex flex-wrap items-center gap-3">
           <Badge tone="info" className="capitalize bg-[#2c221d] text-[#c29f60] border border-[#4e232e] shadow-md">{topic.level}</Badge>
           <Badge tone="default" className="bg-[#12141a] text-[#dccfa6] border-[#c29f60]/20">Saved {new Date(topic.created_at).toLocaleDateString()}</Badge>
-          {trustedMaterials.length ? <Badge tone="success">{trustedMaterials.length} trusted internal material{trustedMaterials.length === 1 ? "" : "s"}</Badge> : null}
+          {sortedMaterials.length ? <Badge tone="warning">{sortedMaterials.length} web result{sortedMaterials.length === 1 ? "" : "s"}</Badge> : null}
         </div>
         <h2 className="mt-4 text-5xl font-semibold text-[#f4ead6] font-serif">{topic.title}</h2>
         <p className="mt-4 max-w-3xl text-sm leading-8 text-[#dccfa6]/80">
@@ -126,36 +186,20 @@ export function TopicDetails({ topic, materials }: TopicDetailsProps) {
       </Card>
 
       <Card className="p-6 border-[#c29f60]/20 bg-[#15171e]/90">
-        <h3 className="section-title">Learning materials</h3>
-        {visibleMaterials.length ? (
+        <h3 className="section-title">Web search materials</h3>
+        {sortedMaterials.length ? (
           <div className="mt-5 space-y-5">
-            {trustedMaterials.length ? (
-              <div>
-                <div className="mb-3 flex items-center gap-2 text-sm font-medium text-emerald-300">
-                  <ShieldCheck className="h-4 w-4" />
-                  Admin/professor verified materials that strongly match this topic
-                </div>
-                <div className="space-y-3">
-                  {trustedMaterials.map((item) => (
-                    <MaterialCard key={`${item.url}-${item.source_of_result}`} item={item} />
-                  ))}
-                </div>
+            <div>
+              <div className="mb-3 text-sm font-medium text-[#dccfa6]/75">Results scored by the review agent from live web search</div>
+              <div className="space-y-3">
+                {sortedMaterials.map((item) => (
+                  <MaterialCard key={`${item.url}-${item.source_of_result}`} item={item} />
+                ))}
               </div>
-            ) : null}
-
-            {otherMaterials.length ? (
-              <div>
-                <div className="mb-3 text-sm font-medium text-[#dccfa6]/75">Other recommended materials</div>
-                <div className="space-y-3">
-                  {otherMaterials.map((item) => (
-                    <MaterialCard key={`${item.url}-${item.source_of_result}`} item={item} />
-                  ))}
-                </div>
-              </div>
-            ) : null}
+            </div>
           </div>
         ) : (
-          <p className="mt-4 text-sm leading-7 text-[#dccfa6]/70">No materials have been attached to this topic yet.</p>
+          <p className="mt-4 text-sm leading-7 text-[#dccfa6]/70">No web search materials were retrieved for this topic yet.</p>
         )}
       </Card>
 

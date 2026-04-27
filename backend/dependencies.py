@@ -10,7 +10,6 @@ from backend.services.auth_service import AuthService
 from backend.services.material_search_service import MaterialSearchService
 from backend.services.material_service import MaterialService
 from backend.services.topic_service import TopicService
-from backend.tools.web_search import WebSearchTool
 
 
 def get_db():
@@ -32,8 +31,7 @@ def get_topic_service(db: Session = Depends(get_db)) -> TopicService:
 @lru_cache(maxsize=1)
 def get_search_agent() -> SearchAgent:
     settings = get_settings()
-    tool = WebSearchTool(settings)
-    return SearchAgent(tool)
+    return SearchAgent(settings.review_agent_dir, advanced_search=settings.review_advanced_search)
 
 
 def get_material_service(db: Session = Depends(get_db)) -> MaterialService:

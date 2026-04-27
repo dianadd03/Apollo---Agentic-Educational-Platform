@@ -1,15 +1,23 @@
 import { useEffect, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useLocation, useParams } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { TopicDetails } from "@/components/topics/TopicDetails";
 import { Card } from "@/components/ui/card";
 import { api } from "@/services/api";
 import type { SearchResult, TopicDetail } from "@/types/models";
 
+type TopicPageLocationState = {
+  topic?: TopicDetail | null;
+  materials?: SearchResult[];
+  searchLoaded?: boolean;
+};
+
 export function TopicPage() {
   const { topicId } = useParams();
-  const [topic, setTopic] = useState<TopicDetail | null>(null);
-  const [materials, setMaterials] = useState<SearchResult[]>([]);
+  const location = useLocation();
+  const locationState = (location.state as TopicPageLocationState | null) ?? null;
+  const [topic, setTopic] = useState<TopicDetail | null>(locationState?.topic ?? null);
+  const [materials, setMaterials] = useState<SearchResult[]>(locationState?.materials ?? []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,8 +28,12 @@ export function TopicPage() {
       try {
         const detail = await api.getTopic(topicId);
         setTopic(detail);
-        const searchResponse = await api.searchMaterials(detail.title);
-        setMaterials(searchResponse.results);
+        if (locationState?.searchLoaded && locationState.topic?.id === detail.id) {
+          setMaterials(locationState.materials ?? []);
+        } else {
+          const searchResponse = await api.searchMaterials(detail.title);
+          setMaterials(searchResponse.results);
+        }
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unable to load topic details.");
@@ -30,7 +42,7 @@ export function TopicPage() {
       }
     };
     void load();
-  }, [topicId]);
+  }, [topicId, locationState]);
 
   if (!topicId) return <Navigate to="/library" replace />;
 
@@ -46,4 +58,3 @@ export function TopicPage() {
     </AppShell>
   );
 }
-
