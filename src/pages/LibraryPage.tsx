@@ -7,7 +7,7 @@ import { TopicLevelModal } from "@/components/library/TopicLevelModal";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
-import type { Topic, TopicLevel } from "@/types/models";
+import type { SearchResult, Topic, TopicLevel } from "@/types/models";
 
 export function LibraryPage() {
   const navigate = useNavigate();
@@ -44,13 +44,23 @@ export function LibraryPage() {
     if (!pendingTopic) return;
     setSaving(true);
     try {
-      const saved = await api.createTopic(pendingTopic, selectedLevel);
+      const topicTitle = pendingTopic;
+      const searchResponse = await api.searchMaterials(topicTitle);
+      const preloadedMaterials: SearchResult[] = searchResponse.results;
+      const saved = await api.createTopic(topicTitle, selectedLevel);
+
       setTopics((current) => [saved, ...current]);
       setPendingTopic("");
       setError(null);
-      navigate(`/topics/${saved.id}`);
+      navigate(`/topics/${saved.id}`, {
+        state: {
+          topic: saved,
+          materials: preloadedMaterials,
+          searchLoaded: true,
+        },
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to save topic.");
+      setError(err instanceof Error ? err.message : "Unable to search and save topic.");
     } finally {
       setSaving(false);
     }
@@ -108,4 +118,3 @@ export function LibraryPage() {
     </AppShell>
   );
 }
-

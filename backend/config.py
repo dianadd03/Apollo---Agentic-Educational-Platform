@@ -19,8 +19,10 @@ class Settings(BaseSettings):
     search_provider: Literal["auto", "tavily", "duckduckgo"] = "auto"
     max_results: int = Field(default=8, ge=1, le=20)
     tavily_api_key: str | None = None
+    review_agent_dir: str = "/Users/leusteanstefan/Desktop/test"
+    review_advanced_search: bool = False
     frontend_origin: str = "http://localhost:5173"
-    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/apollo"
+    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5434/apollo"
     embedding_dimensions: int = Field(default=1536, ge=1, le=8192)
     uploads_dir: str = "backend/data/uploads"
 

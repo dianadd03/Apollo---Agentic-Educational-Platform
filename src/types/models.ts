@@ -39,6 +39,7 @@ export type SearchResult = {
   is_verified?: boolean;
   is_internal?: boolean;
   source_of_result?: string;
+  review_data?: Record<string, unknown> | null;
 };
 
 export type TopicDetail = Topic & {
