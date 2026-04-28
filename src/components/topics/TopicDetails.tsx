@@ -1,8 +1,12 @@
-import { ExternalLink, ShieldCheck, Star } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, ExternalLink, ShieldCheck, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { resolveMaterialUrl } from "@/lib/materialUrls";
 import type { SearchResult, TopicDetail } from "@/types/models";
+
+const MATERIALS_PER_PAGE = 5;
 
 type TopicDetailsProps = {
   topic: TopicDetail;
@@ -159,7 +163,8 @@ function MaterialCard({ item }: { item: SearchResult }) {
 }
 
 export function TopicDetails({ topic, materials }: TopicDetailsProps) {
-  const sortedMaterials = [...materials].sort((left, right) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const sortedMaterials = useMemo(() => [...materials].sort((left, right) => {
     const leftReview = parseReviewData(left);
     const rightReview = parseReviewData(right);
 
@@ -169,7 +174,16 @@ export function TopicDetails({ topic, materials }: TopicDetailsProps) {
     const leftEase = typeof leftReview?.ease_of_understanding_score === "number" ? leftReview.ease_of_understanding_score : -1;
     const rightEase = typeof rightReview?.ease_of_understanding_score === "number" ? rightReview.ease_of_understanding_score : -1;
     return rightEase - leftEase;
-  });
+  }), [materials]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedMaterials.length / MATERIALS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageStart = (safePage - 1) * MATERIALS_PER_PAGE;
+  const visibleMaterials = sortedMaterials.slice(pageStart, pageStart + MATERIALS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [topic.id, materials.length]);
 
   return (
     <div className="space-y-6">
@@ -190,12 +204,56 @@ export function TopicDetails({ topic, materials }: TopicDetailsProps) {
         {sortedMaterials.length ? (
           <div className="mt-5 space-y-5">
             <div>
-              <div className="mb-3 text-sm font-medium text-[#dccfa6]/75">Results scored by the review agent from live web search</div>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-sm font-medium text-[#dccfa6]/75">
+                <span>Results scored by the review agent from live web search</span>
+                <span className="text-[#dccfa6]/55">
+                  Showing {pageStart + 1}-{Math.min(pageStart + MATERIALS_PER_PAGE, sortedMaterials.length)} of {sortedMaterials.length}
+                </span>
+              </div>
               <div className="space-y-3">
-                {sortedMaterials.map((item) => (
+                {visibleMaterials.map((item) => (
                   <MaterialCard key={`${item.url}-${item.source_of_result}`} item={item} />
                 ))}
               </div>
+              {totalPages > 1 ? (
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#c29f60]/10 pt-4">
+                  <Button
+                    variant="ghost"
+                    className="text-[#dccfa6] hover:text-[#f4ead6] hover:bg-[#1a1c23]"
+                    disabled={safePage === 1}
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                      <button
+                        key={page}
+                        type="button"
+                        aria-label={`Go to materials page ${page}`}
+                        onClick={() => setCurrentPage(page)}
+                        className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm transition ${
+                          page === safePage
+                            ? "border-[#c29f60] bg-[#c29f60] text-[#12141a]"
+                            : "border-[#c29f60]/20 bg-[#12141a] text-[#dccfa6] hover:border-[#c29f60]/60"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    className="text-[#dccfa6] hover:text-[#f4ead6] hover:bg-[#1a1c23]"
+                    disabled={safePage === totalPages}
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  >
+                    Next
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : (

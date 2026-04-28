@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { api } from "@/services/api";
 import type { SearchResult, TopicDetail } from "@/types/models";
 
+const MATERIAL_SEARCH_LIMIT = 20;
+
 type TopicPageLocationState = {
   topic?: TopicDetail | null;
   materials?: SearchResult[];
@@ -31,7 +33,7 @@ export function TopicPage() {
         if (locationState?.searchLoaded && locationState.topic?.id === detail.id) {
           setMaterials(locationState.materials ?? []);
         } else {
-          const searchResponse = await api.searchMaterials(detail.title);
+          const searchResponse = await api.searchMaterials(detail.title, MATERIAL_SEARCH_LIMIT);
           setMaterials(searchResponse.results);
         }
         setError(null);
