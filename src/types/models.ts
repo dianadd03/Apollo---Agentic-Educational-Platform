@@ -12,6 +12,7 @@ export type User = {
 };
 
 export type AuthResponse = {
+  token: string;
   user: User;
 };
 
@@ -48,6 +49,20 @@ export type TopicDetail = Topic & {
   roadmap: string[];
   exercises: string[];
   coding_tasks: string[];
+};
+
+export type SearchMaterialsResponse = {
+  topic: string;
+  topic_id?: string | null;
+  query_used: string;
+  results: SearchResult[];
+  search_metadata: {
+    timestamp: string;
+    total_results: number;
+    notes: string;
+    coverage_source?: "db_internal" | "db_internal_with_web_fallback" | "web_only" | "cached";
+    search_result_id?: string | null;
+  };
 };
 
 

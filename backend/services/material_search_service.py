@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 
 MIN_INTERNAL_RESULTS = 3
 MIN_INTERNAL_SCORE = 0.55
-EXTERNAL_RETURN_THRESHOLD = 0.6
 
 SOURCE_TYPE_BOOST = {
     MaterialSourceType.admin_managed: 0.08,
@@ -142,19 +141,17 @@ class MaterialSearchService:
     ) -> list[dict[str, Any]]:
         persisted: list[dict[str, Any]] = []
         for candidate in external_results:
-            if candidate.confidence < EXTERNAL_RETURN_THRESHOLD:
-                continue
-
-            material = self._find_material_by_link(candidate.url)
+            link = candidate.url.strip() or None
+            material = self._find_material_by_link(link)
             if material is None:
                 material = Material(
                     topic_id=topic_record.id,
                     canonical_name=candidate.title,
-                    link=candidate.url,
+                    link=link,
                     material_type=self._map_resource_type(candidate.type),
                     difficulty=self._infer_topic_difficulty(topic_record),
                     source_type=self._infer_source_type(candidate.source),
-                    trust_level=TrustLevel.high if candidate.confidence >= 0.8 else TrustLevel.medium,
+                    trust_level=self._trust_level_for_confidence(candidate.confidence),
                     trust_score=round(candidate.confidence, 3),
                     quality_score=round(self._quality_score(candidate), 3),
                     ease_score=round(self._ease_score(candidate), 3),
@@ -174,6 +171,10 @@ class MaterialSearchService:
                 material.trust_score = max(float(material.trust_score or 0), candidate.confidence)
                 material.quality_score = max(float(material.quality_score or 0), self._quality_score(candidate))
                 material.ease_score = max(float(material.ease_score or 0), self._ease_score(candidate))
+                material.trust_level = self._stronger_trust_level(
+                    material.trust_level,
+                    self._trust_level_for_confidence(candidate.confidence),
+                )
                 metadata = dict(material.metadata_json or {})
                 metadata["reason_for_inclusion"] = metadata.get("reason_for_inclusion") or candidate.reason_for_inclusion
                 metadata["external_source"] = metadata.get("external_source") or candidate.source
@@ -437,7 +438,10 @@ class MaterialSearchService:
             self._db.refresh(topic)
         return topic
 
-    def _find_material_by_link(self, link: str) -> Material | None:
+    def _find_material_by_link(self, link: str | None) -> Material | None:
+        if not link:
+            return None
+
         stmt: Select[tuple[Material]] = (
             select(Material)
             .options(
@@ -449,6 +453,22 @@ class MaterialSearchService:
             .where(Material.link == link)
         )
         return self._db.scalar(stmt)
+
+    def _trust_level_for_confidence(self, confidence: float) -> TrustLevel:
+        if confidence >= 0.8:
+            return TrustLevel.high
+        if confidence >= 0.6:
+            return TrustLevel.medium
+        return TrustLevel.low
+
+    def _stronger_trust_level(self, current: TrustLevel, candidate: TrustLevel) -> TrustLevel:
+        rank = {
+            TrustLevel.low: 0,
+            TrustLevel.medium: 1,
+            TrustLevel.high: 2,
+            TrustLevel.verified: 3,
+        }
+        return candidate if rank[candidate] > rank[current] else current
 
     def _ensure_material_topic_link(self, material: Material, topic_record: Topic) -> None:
         if any(link.topic_id == topic_record.id for link in material.topic_links):

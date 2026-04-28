@@ -8,6 +8,9 @@ function getToken() {
 }
 
 export function storeToken(token: string) {
+  if (!token) {
+    throw new Error("Authentication token missing from server response.");
+  }
   localStorage.setItem(TOKEN_STORAGE_KEY, token);
 }
 
@@ -37,6 +40,10 @@ async function apiFetch<T>(path: string, init: RequestInit = {}, auth = false): 
     const payload = await response.json().catch(() => null);
     const message = payload?.detail || `Request failed with status ${response.status}`;
     throw new Error(message);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
@@ -70,6 +77,11 @@ export const api = {
   },
   getTopic(topicId: string) {
     return apiFetch<TopicDetail>(`/api/topics/${topicId}`, {}, true);
+  },
+  deleteTopic(topicId: string) {
+    return apiFetch<void>(`/api/topics/${topicId}`, {
+      method: "DELETE",
+    }, true);
   },
   searchMaterials(topic: string, maxResults?: number) {
     return apiFetch<SearchMaterialsResponse>("/api/search-materials", {
