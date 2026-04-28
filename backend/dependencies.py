@@ -1,56 +1,57 @@
 from functools import lru_cache
-from pathlib import Path
 
-from fastapi import Cookie, Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
+from sqlalchemy.orm import Session
 
+from backend.agents.search_agent import SearchAgent
 from backend.config import get_settings
+from backend.db.session import SessionLocal
 from backend.services.auth_service import AuthService
-from backend.services.storage_service import JsonStore
+from backend.services.material_search_service import MaterialSearchService
+from backend.services.material_service import MaterialService
 from backend.services.topic_service import TopicService
 
 
-@lru_cache(maxsize=1)
-def get_store() -> JsonStore:
-    return JsonStore(Path(__file__).resolve().parent / "data" / "store.json")
+def get_db():
+    db: Session = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
+    return AuthService(db=db)
+
+
+def get_topic_service(db: Session = Depends(get_db)) -> TopicService:
+    return TopicService(db=db)
 
 
 @lru_cache(maxsize=1)
-def get_auth_service() -> AuthService:
+def get_search_agent() -> SearchAgent:
     settings = get_settings()
-    return AuthService(store=get_store(), session_ttl_hours=settings.session_ttl_hours)
+    return SearchAgent(settings.review_agent_dir, advanced_search=settings.review_advanced_search)
 
 
-@lru_cache(maxsize=1)
-def get_topic_service() -> TopicService:
-    return TopicService(store=get_store())
+def get_material_service(db: Session = Depends(get_db)) -> MaterialService:
+    return MaterialService(db=db)
+
+
+def get_material_search_service(db: Session = Depends(get_db)) -> MaterialSearchService:
+    settings = get_settings()
+    return MaterialSearchService(db=db, search_agent=get_search_agent(), default_max_results=settings.max_results)
 
 
 def get_current_user(
     authorization: str | None = Header(default=None),
-    session_token: str | None = Cookie(default=None, alias=get_settings().session_cookie_name),
     auth_service: AuthService = Depends(get_auth_service),
-) -> dict:
-    token = None
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.removeprefix("Bearer ").strip()
-    elif session_token:
-        token = session_token
-
-    if not token:
+):
+    if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
 
+    token = authorization.removeprefix("Bearer ").strip()
     user = auth_service.get_user_by_token(token)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired session.")
     return user
-
-
-def get_current_token(
-    authorization: str | None = Header(default=None),
-    session_token: str | None = Cookie(default=None, alias=get_settings().session_cookie_name),
-) -> str:
-    if authorization and authorization.startswith("Bearer "):
-        return authorization.removeprefix("Bearer ").strip()
-    if session_token:
-        return session_token
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")

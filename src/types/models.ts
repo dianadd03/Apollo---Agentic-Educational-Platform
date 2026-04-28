@@ -1,11 +1,13 @@
-export type UserRole = "Student" | "Professor";
+export type UserRole = "student" | "professor" | "admin";
 
 export type TopicLevel = "beginner" | "intermediate" | "advanced";
+export type MaterialKind = "article" | "video" | "book" | "documentation" | "tutorial" | "pdf" | "course" | "other";
 
 export type User = {
   id: string;
   name: string;
   email: string;
+  role: UserRole;
   created_at: string;
 };
 
@@ -22,10 +24,23 @@ export type Topic = {
 };
 
 export type SearchResult = {
-  kind: string;
-  title: string | null;
-  url: string | null;
-  score: number | null;
+
+  material_id?: string | null;
+  title: string;
+  url: string;
+  type: "video" | "article" | "book" | "documentation" | "tutorial" | "other";
+  source: string;
+  snippet: string;
+  reason_for_inclusion: string;
+  confidence: number;
+  score?: number | null;
+  like_count?: number;
+  user_has_liked?: boolean;
+  is_verified?: boolean;
+  is_internal?: boolean;
+  source_of_result?: string;
+  review_data?: Record<string, unknown> | null;
+
 };
 
 export type TopicDetail = Topic & {
@@ -34,6 +49,7 @@ export type TopicDetail = Topic & {
   exercises: string[];
   coding_tasks: string[];
 };
+
 
 export type Material = {
   id: string;
@@ -53,6 +69,31 @@ export type Material = {
   snippet?: string;
   candidateType?: "video" | "article" | "book" | "documentation" | "tutorial" | "other";
 };
+
+export type UploadedMaterialResponse = {
+  id: string;
+  canonical_name: string;
+  link: string | null;
+  file_path: string | null;
+  material_type: MaterialKind;
+  difficulty: TopicLevel;
+  source_type: string;
+  trust_score: number;
+  quality_score: number;
+  ease_score: number;
+  summary: string | null;
+  is_published: boolean;
+  is_active: boolean;
+  is_verified: boolean;
+  like_count: number;
+  user_has_liked: boolean;
+  tags: string[];
+  topics: Array<{ id: string; title: string; slug: string }>;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type ManagedMaterialResponse = UploadedMaterialResponse;
 
 export type Problem = {
   id: string;
@@ -120,12 +161,12 @@ export type AgentStage = {
 export type AgentRun = {
   id: string;
   query: string;
-  stages: AgentStage[];
   confidence: number;
   retries: number;
   status: "Healthy" | "Needs Attention" | "Complete";
   startedAt: string;
   finishedAt: string;
+  stages: AgentStage[];
 };
 
 export type TopicWorkspaceData = {

@@ -1,13 +1,17 @@
-import { BookMarked, GraduationCap, LibraryBig, LogOut } from "lucide-react";
+import { BookMarked, FolderKanban, GraduationCap, LibraryBig, LogOut, UploadCloud } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const links = [{ to: "/library", label: "Learning Library", icon: LibraryBig }];
-
 export function Sidebar() {
   const { logout, user } = useAuth();
+  const isStaff = user?.role === "professor" || user?.role === "admin";
+  const links = [
+    { to: "/library", label: "Learning Library", icon: LibraryBig },
+    ...(isStaff ? [{ to: "/materials", label: "Managed Materials", icon: FolderKanban }] : []),
+    ...(isStaff ? [{ to: "/materials/upload", label: "Upload Materials", icon: UploadCloud }] : []),
+  ];
 
   return (
     <aside className="glass-panel hidden w-72 shrink-0 flex-col p-5 lg:flex">
@@ -24,6 +28,7 @@ export function Sidebar() {
       <div className="mb-6 rounded-[24px] border border-[#c29f60]/20 bg-[linear-gradient(180deg,#1c1e26,#15171e)] p-5 shadow-[inset_0_1px_0_rgba(194,159,96,0.1)] text-[#f4ead6]">
         <p className="text-xs uppercase tracking-[0.24em] text-[#a3835b]">Reader profile</p>
         <p className="mt-3 text-xl font-semibold text-[#f4ead6]">{user?.name ?? "Learner"}</p>
+        <p className="mt-2 text-sm uppercase tracking-[0.18em] text-[#c29f60]">{user?.role ?? "student"}</p>
         <p className="mt-2 text-sm leading-7 text-[#dccfa6]/80">
           Search topics, assign a level per topic, and keep your study collection organized like a curated academic shelf.
         </p>
@@ -39,7 +44,7 @@ export function Sidebar() {
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
-                  isActive 
+                  isActive
                     ? "bg-[#2c221d] border border-[#c29f60]/20 text-[#f4ead6] shadow-[0_12px_24px_rgba(0,0,0,0.3)]"
                     : "text-[#dccfa6]/70 hover:bg-[#1c1e26] hover:text-[#f4ead6]"
                 )
@@ -67,4 +72,3 @@ export function Sidebar() {
     </aside>
   );
 }
-

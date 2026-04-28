@@ -3,6 +3,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { LibraryPage } from "@/pages/LibraryPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { ManagedMaterialsPage } from "@/pages/ManagedMaterialsPage";
+import { MaterialUploadPage } from "@/pages/MaterialUploadPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { TopicPage } from "@/pages/TopicPage";
 
@@ -20,6 +22,8 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/library" element={<LibraryPage />} />
+        <Route path="/materials" element={<ManagedMaterialsPage />} />
+        <Route path="/materials/upload" element={<MaterialUploadPage />} />
         <Route path="/topics/:topicId" element={<TopicPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

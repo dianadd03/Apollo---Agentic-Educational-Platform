@@ -2,11 +2,12 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { useAuth } from "@/context/AuthContext";
+import type { UserRole } from "@/types/models";
 
 export function RegisterPage() {
   const { user, register } = useAuth();
   const navigate = useNavigate();
-  const [values, setValues] = useState({ name: "", email: "", password: "" });
+  const [values, setValues] = useState({ name: "", email: "", password: "", role: "student" as UserRole });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,7 +17,7 @@ export function RegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      await register(values.name, values.email, values.password);
+      await register(values.name, values.email, values.password, values.role);
       navigate("/library", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to register.");
@@ -52,4 +53,3 @@ export function RegisterPage() {
     </div>
   );
 }
-
