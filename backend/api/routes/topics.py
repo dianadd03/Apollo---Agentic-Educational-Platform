@@ -32,3 +32,14 @@ def get_topic(
     if not topic:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Topic not found.")
     return topic
+
+
+@router.delete("/{topic_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_topic(
+    topic_id: str,
+    current_user: User = Depends(get_current_user),
+    topic_service: TopicService = Depends(get_topic_service),
+) -> None:
+    deleted = topic_service.delete_topic(current_user.id, topic_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Topic not found.")
