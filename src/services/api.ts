@@ -57,8 +57,18 @@ export const api = {
   getTopic(topicId: string) {
     return apiFetch<TopicDetail>(`/api/topics/${topicId}`);
   },
+<<<<<<< Updated upstream
   searchMaterials(topic: string, advanced = false) {
     return apiFetch<SearchResult[]>("/api/search-materials", {
+=======
+  deleteTopic(topicId: string) {
+    return apiFetch<void>(`/api/topics/${topicId}`, {
+      method: "DELETE",
+    }, true);
+  },
+  searchMaterials(topic: string, maxResults?: number) {
+    return apiFetch<SearchMaterialsResponse>("/api/search-materials", {
+>>>>>>> Stashed changes
       method: "POST",
       body: JSON.stringify({ topic, advanced }),
     });

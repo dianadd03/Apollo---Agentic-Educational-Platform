@@ -1,14 +1,18 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+ROOT_DIR = Path(__file__).resolve().parent.parent
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="APOLLO_",
-        env_file=".env",
+        env_file=(ROOT_DIR / ".env", ROOT_DIR / "backend" / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )

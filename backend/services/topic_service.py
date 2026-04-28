@@ -2,6 +2,13 @@ from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
+<<<<<<< Updated upstream
+=======
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
+
+from backend.db.models import Topic, UserTopic
+>>>>>>> Stashed changes
 from backend.schemas.topics import TopicCreateRequest, TopicDetailResponse, TopicResponse
 from backend.services.storage_service import JsonStore
 
@@ -44,7 +51,24 @@ class TopicService:
             coding_tasks=[],
         )
 
+<<<<<<< Updated upstream
     def _to_topic_response(self, topic: dict[str, Any]) -> TopicResponse:
+=======
+    def delete_topic(self, user_id: str | UUID, topic_id: str | UUID) -> bool:
+        user_uuid = self._ensure_uuid(user_id)
+        topic_uuid = self._ensure_uuid(topic_id)
+        result = self._db.execute(
+            delete(UserTopic).where(UserTopic.user_id == user_uuid, UserTopic.id == topic_uuid)
+        )
+        if result.rowcount == 0:
+            self._db.rollback()
+            return False
+
+        self._db.commit()
+        return True
+
+    def _to_topic_response(self, user_topic: UserTopic, topic: Topic) -> TopicResponse:
+>>>>>>> Stashed changes
         return TopicResponse(
             id=topic["id"],
             title=topic["title"],
