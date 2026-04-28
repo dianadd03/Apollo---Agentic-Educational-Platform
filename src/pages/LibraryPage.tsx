@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
 import type { SearchResult, Topic, TopicLevel } from "@/types/models";
 
+const MATERIAL_SEARCH_LIMIT = 20;
+
 export function LibraryPage() {
   const navigate = useNavigate();
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -46,7 +48,7 @@ export function LibraryPage() {
     setSaving(true);
     try {
       const topicTitle = pendingTopic;
-      const searchResponse = await api.searchMaterials(topicTitle);
+      const searchResponse = await api.searchMaterials(topicTitle, MATERIAL_SEARCH_LIMIT);
       const preloadedMaterials: SearchResult[] = searchResponse.results;
       const saved = await api.createTopic(topicTitle, selectedLevel);
 
