@@ -4,9 +4,11 @@ import type { Topic } from "@/types/models";
 
 type BookshelfProps = {
   topics: Topic[];
+  onDeleteTopic: (topic: Topic) => void;
+  deletingTopicId?: string | null;
 };
 
-export function Bookshelf({ topics }: BookshelfProps) {
+export function Bookshelf({ topics, onDeleteTopic, deletingTopicId }: BookshelfProps) {
   if (!topics.length) {
     return (
       <div className="glass-panel flex min-h-[320px] flex-col items-center justify-center px-6 py-12 text-center">
@@ -34,7 +36,13 @@ export function Bookshelf({ topics }: BookshelfProps) {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4 items-end pl-2">
             {row.map((topic, index) => (
-              <BookCard key={topic.id} topic={topic} index={rowIndex * 4 + index} />
+              <BookCard
+                key={topic.id}
+                topic={topic}
+                index={rowIndex * 4 + index}
+                onDelete={onDeleteTopic}
+                deleting={deletingTopicId === topic.id}
+              />
             ))}
           </div>
           <div className="bookshelf-rail z-20" />
