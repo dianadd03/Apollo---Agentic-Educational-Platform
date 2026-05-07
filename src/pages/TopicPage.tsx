@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation, useParams } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
+import { ProblemsSection } from "@/components/problems/ProblemsSection";
 import { TopicDetails } from "@/components/topics/TopicDetails";
 import { Card } from "@/components/ui/card";
 import { api } from "@/services/api";
-import type { SearchResult, TopicDetail } from "@/types/models";
+import type { AggregatedProblem, ProblemListMetadata, SearchResult, TopicDetail } from "@/types/models";
 
 const MATERIAL_SEARCH_LIMIT = 20;
 
@@ -22,6 +23,11 @@ export function TopicPage() {
   const [materials, setMaterials] = useState<SearchResult[]>(locationState?.materials ?? []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [problems, setProblems] = useState<AggregatedProblem[]>([]);
+  const [problemsMeta, setProblemsMeta] = useState<ProblemListMetadata | null>(null);
+  const [problemsLoading, setProblemsLoading] = useState(false);
+  const [problemsError, setProblemsError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -46,6 +52,27 @@ export function TopicPage() {
     void load();
   }, [topicId, locationState]);
 
+  useEffect(() => {
+    if (!topic?.title) return;
+    const loadProblems = async () => {
+      setProblemsLoading(true);
+      setProblemsError(null);
+      try {
+        const response = await api.getProblemsForTopic(topic.title, {
+          difficulty: topic.level,
+          maxResults: 30,
+        });
+        setProblems(response.problems);
+        setProblemsMeta(response.metadata);
+      } catch (err) {
+        setProblemsError(err instanceof Error ? err.message : "Unable to load practice problems.");
+      } finally {
+        setProblemsLoading(false);
+      }
+    };
+    void loadProblems();
+  }, [topic?.id, topic?.title, topic?.level]);
+
   if (!topicId) return <Navigate to="/library" replace />;
 
   return (
@@ -55,7 +82,15 @@ export function TopicPage() {
       ) : error || !topic ? (
         <Card className="p-8 text-sm text-rose-400 border-rose-900 bg-rose-950/40">{error ?? "Topic not found."}</Card>
       ) : (
-        <TopicDetails topic={topic} materials={materials} />
+        <div className="space-y-6">
+          <TopicDetails topic={topic} materials={materials} />
+          <ProblemsSection
+            problems={problems}
+            metadata={problemsMeta}
+            loading={problemsLoading}
+            error={problemsError}
+          />
+        </div>
       )}
     </AppShell>
   );

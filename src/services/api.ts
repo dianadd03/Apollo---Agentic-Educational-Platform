@@ -1,4 +1,4 @@
-import type { AuthResponse, ManagedMaterialResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
+import type { AuthResponse, ManagedMaterialResponse, ProblemListResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_STORAGE_KEY = "apollo-library-token";
@@ -109,5 +109,22 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ is_active: isActive }),
     }, true);
+  },
+  getProblemsForTopic(
+    topic: string,
+    options?: {
+      platforms?: string[];
+      difficulty?: "beginner" | "intermediate" | "advanced";
+      maxResults?: number;
+      forceRefresh?: boolean;
+    },
+  ) {
+    const params = new URLSearchParams();
+    params.set("topic", topic);
+    options?.platforms?.forEach((p) => params.append("platforms", p));
+    if (options?.difficulty) params.set("difficulty", options.difficulty);
+    if (options?.maxResults) params.set("max_results", String(options.maxResults));
+    if (options?.forceRefresh) params.set("force_refresh", "true");
+    return apiFetch<ProblemListResponse>(`/api/problems/topic-by-name?${params.toString()}`, {}, true);
   },
 };

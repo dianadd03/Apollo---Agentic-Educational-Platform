@@ -3,12 +3,15 @@ from functools import lru_cache
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
+from backend.agents.problem_aggregator import ProblemAggregatorAgent
+from backend.agents.problem_providers import AtCoderProvider, CodeforcesProvider
 from backend.agents.search_agent import SearchAgent
 from backend.config import get_settings
 from backend.db.session import SessionLocal
 from backend.services.auth_service import AuthService
 from backend.services.material_search_service import MaterialSearchService
 from backend.services.material_service import MaterialService
+from backend.services.problem_service import ProblemService
 from backend.services.topic_service import TopicService
 
 
@@ -41,6 +44,29 @@ def get_material_service(db: Session = Depends(get_db)) -> MaterialService:
 def get_material_search_service(db: Session = Depends(get_db)) -> MaterialSearchService:
     settings = get_settings()
     return MaterialSearchService(db=db, search_agent=get_search_agent(), default_max_results=settings.max_results)
+
+
+@lru_cache(maxsize=1)
+def get_problem_aggregator() -> ProblemAggregatorAgent:
+    settings = get_settings()
+    providers = [CodeforcesProvider(), AtCoderProvider()]
+    return ProblemAggregatorAgent(
+        providers=providers,
+        cache_ttl_hours=settings.problems_cache_ttl_hours,
+        max_per_source=settings.problems_max_per_source,
+        general_threshold=settings.problems_general_threshold,
+        general_generator=None,
+    )
+
+
+def get_problem_service(db: Session = Depends(get_db)) -> ProblemService:
+    settings = get_settings()
+    return ProblemService(
+        db=db,
+        agent=get_problem_aggregator(),
+        cache_ttl_hours=settings.problems_cache_ttl_hours,
+        default_max_results=settings.problems_default_max_results,
+    )
 
 
 def get_current_user(
