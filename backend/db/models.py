@@ -39,6 +39,7 @@ class TopicLevel(str, Enum):
     beginner = "beginner"
     intermediate = "intermediate"
     advanced = "advanced"
+    expert = "expert"
 
 
 class MaterialType(str, Enum):

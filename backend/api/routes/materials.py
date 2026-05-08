@@ -1,7 +1,17 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
+from backend.agents.extractor_agent import (
+    EmptyExtractedTextError,
+    ExtractedMaterialMetadata,
+    ExtractorAgent,
+    InvalidLLMJSONError,
+    InvalidMetadataError,
+    UnreadableLinkError,
+    UnreadablePDFError,
+    UnsupportedMaterialTypeError,
+)
 from backend.db.models import MaterialType, TopicLevel, User
-from backend.dependencies import get_current_user, get_material_service
+from backend.dependencies import get_current_user, get_extractor_agent, get_material_service
 from backend.schemas.materials import (
     MaterialActivationRequest,
     MaterialCreateRequest,
@@ -81,6 +91,33 @@ def upload_material(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.post("/extract-metadata", response_model=ExtractedMaterialMetadata)
+def extract_material_metadata(
+    file: UploadFile | None = File(default=None),
+    link: str | None = Form(default=None),
+    current_user: User = Depends(get_current_user),
+    extractor_agent: ExtractorAgent = Depends(get_extractor_agent),
+) -> ExtractedMaterialMetadata:
+    if current_user.role.value not in {"professor", "admin"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only professor or admin accounts can extract material metadata.",
+        )
+
+    try:
+        return extractor_agent.extract_metadata(upload=file, link=link)
+    except UnsupportedMaterialTypeError as exc:
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(exc)) from exc
+    except UnreadableLinkError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except UnreadablePDFError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except EmptyExtractedTextError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+    except (InvalidLLMJSONError, InvalidMetadataError) as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
 
 
 @router.put("/{material_id}", response_model=MaterialResponse)

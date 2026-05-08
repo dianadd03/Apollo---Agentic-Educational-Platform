@@ -3,9 +3,33 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
+from backend.agents.extractor_agent import UnsupportedMaterialTypeError
 from backend.db.models import MaterialSourceType, MaterialType, TopicLevel, User, UserRole
-from backend.dependencies import get_current_user, get_material_service
+from backend.dependencies import get_current_user, get_extractor_agent, get_material_service
 from backend.main import app
+
+
+class FakeExtractorAgent:
+    def __init__(self, error: Exception | None = None) -> None:
+        self.called = False
+        self.error = error
+
+    def extract_metadata(self, upload=None, link=None):
+        self.called = True
+        if self.error:
+            raise self.error
+        return {
+            "title": "Extracted Lecture Notes",
+            "material_type": "video" if link else "pdf",
+            "topics": ["Dynamic Programming", "Algorithms"],
+            "tags": ["dp", "notes"],
+            "difficulty": "intermediate",
+            "material_quality_score": 84,
+            "ease_of_understanding_score": 76,
+            "trust_score": 88,
+            "summary": "A concise lecture note set about dynamic programming.",
+            "short_reason": "Clear structure with useful examples.",
+        }
 
 
 class FakeMaterialService:
@@ -200,6 +224,79 @@ def test_professor_can_upload_material_file():
     assert service.upload_called is True
     assert response.json()["canonical_name"] == "Lecture notes"
     assert response.json()["file_path"].endswith("lecture-notes.pdf")
+
+    app.dependency_overrides.clear()
+
+
+def test_professor_can_extract_material_metadata_without_creating_material():
+    extractor = FakeExtractorAgent()
+    app.dependency_overrides[get_current_user] = lambda: make_user(UserRole.professor)
+    app.dependency_overrides[get_extractor_agent] = lambda: extractor
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/materials/extract-metadata",
+        files={"file": ("lecture-notes.txt", b"Dynamic programming lecture notes", "text/plain")},
+    )
+
+    assert response.status_code == 200
+    assert extractor.called is True
+    assert response.json()["title"] == "Extracted Lecture Notes"
+    assert response.json()["material_type"] == "pdf"
+    assert response.json()["material_quality_score"] == 84
+
+    app.dependency_overrides.clear()
+
+
+def test_professor_can_extract_link_metadata_without_creating_material():
+    extractor = FakeExtractorAgent()
+    app.dependency_overrides[get_current_user] = lambda: make_user(UserRole.professor)
+    app.dependency_overrides[get_extractor_agent] = lambda: extractor
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/materials/extract-metadata",
+        data={"link": "https://www.youtube.com/watch?v=abc123"},
+    )
+
+    assert response.status_code == 200
+    assert extractor.called is True
+    assert response.json()["material_type"] == "video"
+    assert response.json()["difficulty"] == "intermediate"
+
+    app.dependency_overrides.clear()
+
+
+def test_extract_metadata_rejects_student():
+    extractor = FakeExtractorAgent()
+    app.dependency_overrides[get_current_user] = lambda: make_user(UserRole.student)
+    app.dependency_overrides[get_extractor_agent] = lambda: extractor
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/materials/extract-metadata",
+        files={"file": ("lecture-notes.txt", b"Dynamic programming lecture notes", "text/plain")},
+    )
+
+    assert response.status_code == 403
+    assert extractor.called is False
+
+    app.dependency_overrides.clear()
+
+
+def test_extract_metadata_maps_unsupported_file_type():
+    extractor = FakeExtractorAgent(UnsupportedMaterialTypeError("Unsupported file type."))
+    app.dependency_overrides[get_current_user] = lambda: make_user(UserRole.professor)
+    app.dependency_overrides[get_extractor_agent] = lambda: extractor
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/materials/extract-metadata",
+        files={"file": ("archive.zip", b"not supported", "application/zip")},
+    )
+
+    assert response.status_code == 415
+    assert response.json()["detail"] == "Unsupported file type."
 
     app.dependency_overrides.clear()
 
