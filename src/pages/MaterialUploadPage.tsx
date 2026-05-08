@@ -1,4 +1,5 @@
-import { UploadCloud, Loader2, ShieldAlert } from "lucide-react";
+﻿import { UploadCloud, Loader2, ShieldAlert } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
@@ -10,7 +11,7 @@ import { api } from "@/services/api";
 import type { MaterialKind, TopicLevel, UploadedMaterialResponse } from "@/types/models";
 
 const materialTypeOptions: MaterialKind[] = ["article", "video", "book", "documentation", "tutorial", "pdf", "course", "other"];
-const difficultyOptions: TopicLevel[] = ["beginner", "intermediate", "advanced"];
+const difficultyOptions: TopicLevel[] = ["beginner", "intermediate", "advanced", "expert"];
 
 export function MaterialUploadPage() {
   const { user } = useAuth();
@@ -19,16 +20,20 @@ export function MaterialUploadPage() {
     material_type: "pdf" as MaterialKind,
     difficulty: "intermediate" as TopicLevel,
     summary: "",
-    quality_score: "0.7",
-    ease_score: "0.6",
-    trust_score: "0.7",
+    quality_score: "",
+    ease_score: "",
+    trust_score: "",
     tags: "",
     topic_titles: "",
     is_published: true,
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [materialTypeTouched, setMaterialTypeTouched] = useState(false);
+  const [difficultyTouched, setDifficultyTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [uploaded, setUploaded] = useState<UploadedMaterialResponse | null>(null);
 
   const isStaff = useMemo(() => user?.role === "professor" || user?.role === "admin", [user]);
@@ -45,31 +50,86 @@ export function MaterialUploadPage() {
 
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       const formData = new FormData();
       Object.entries(values).forEach(([key, value]) => {
-        formData.append(key, typeof value === "boolean" ? String(value) : value);
+        const fallbackScores: Record<string, string> = {
+          quality_score: "0.5",
+          ease_score: "0.5",
+          trust_score: "0.5",
+        };
+        const formValue = typeof value === "string" && !hasValue(value) && key in fallbackScores ? fallbackScores[key] : value;
+        formData.append(key, typeof formValue === "boolean" ? String(formValue) : formValue);
       });
       formData.append("file", selectedFile);
       const response = await api.uploadMaterial(formData);
       setUploaded(response);
+      setSuccess("Material uploaded.");
       setValues({
         canonical_name: "",
         material_type: "pdf",
         difficulty: "intermediate",
         summary: "",
-        quality_score: "0.7",
-        ease_score: "0.6",
-        trust_score: "0.7",
+        quality_score: "",
+        ease_score: "",
+        trust_score: "",
         tags: "",
         topic_titles: "",
         is_published: true,
       });
+      setMaterialTypeTouched(false);
+      setDifficultyTouched(false);
       setSelectedFile(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to upload material.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const hasValue = (value: string) => value.trim().length > 0;
+
+  const scoreToFormValue = (score: number) => (Math.min(Math.max(score, 0), 100) / 100).toFixed(2);
+
+  const materialTypeFromFile = (file: File): MaterialKind => {
+    const filename = file.name.toLowerCase();
+    if (filename.endsWith(".pdf") || file.type === "application/pdf") return "pdf";
+    if (filename.endsWith(".md")) return "documentation";
+    if (filename.endsWith(".txt") || file.type.startsWith("text/")) return "other";
+    return "other";
+  };
+
+  const handleExtractMetadata = async () => {
+    if (!selectedFile) {
+      setError("Choose a file before extracting metadata.");
+      return;
+    }
+
+    setExtracting(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      const metadata = await api.extractMaterialMetadata(formData);
+      setValues((current) => ({
+        ...current,
+        canonical_name: hasValue(current.canonical_name) ? current.canonical_name : metadata.title,
+        material_type: materialTypeTouched ? current.material_type : materialTypeFromFile(selectedFile),
+        topic_titles: hasValue(current.topic_titles) ? current.topic_titles : metadata.topics.join(", "),
+        tags: hasValue(current.tags) ? current.tags : metadata.tags.join(", "),
+        difficulty: difficultyTouched ? current.difficulty : metadata.difficulty,
+        quality_score: hasValue(current.quality_score) ? current.quality_score : scoreToFormValue(metadata.material_quality_score),
+        ease_score: hasValue(current.ease_score) ? current.ease_score : scoreToFormValue(metadata.ease_of_understanding_score),
+        trust_score: hasValue(current.trust_score) ? current.trust_score : scoreToFormValue(metadata.trust_score),
+        summary: hasValue(current.summary) ? current.summary : metadata.summary,
+      }));
+      setSuccess(`Metadata filled where fields were empty. ${metadata.short_reason}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to extract metadata.");
+    } finally {
+      setExtracting(false);
     }
   };
 
@@ -83,7 +143,7 @@ export function MaterialUploadPage() {
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-[#a3835b]">Trusted ingestion</p>
-              <h2 className="mt-2 text-4xl font-semibold tracking-tight text-[#f4ead6] font-serif">Upload internal learning materials for Apollo�s DB-first retrieval.</h2>
+              <h2 className="mt-2 text-4xl font-semibold tracking-tight text-[#f4ead6] font-serif">Upload internal learning materials for Apollo’s DB-first retrieval.</h2>
               <p className="mt-4 max-w-3xl text-base leading-8 text-[#dccfa6]/80">
                 Uploaded files are stored on the server, registered as internal materials, tagged to topics, and become eligible for ranking before web fallback.
               </p>
@@ -102,7 +162,10 @@ export function MaterialUploadPage() {
             <select
               className="w-full rounded-2xl border border-[#c29f60]/20 bg-[#12141a]/80 px-4 py-3 text-sm text-[#f4ead6]"
               value={values.material_type}
-              onChange={(event) => setValues((current) => ({ ...current, material_type: event.target.value as MaterialKind }))}
+              onChange={(event) => {
+                setMaterialTypeTouched(true);
+                setValues((current) => ({ ...current, material_type: event.target.value as MaterialKind }));
+              }}
             >
               {materialTypeOptions.map((option) => (
                 <option key={option} value={option}>{option}</option>
@@ -111,7 +174,10 @@ export function MaterialUploadPage() {
             <select
               className="w-full rounded-2xl border border-[#c29f60]/20 bg-[#12141a]/80 px-4 py-3 text-sm text-[#f4ead6]"
               value={values.difficulty}
-              onChange={(event) => setValues((current) => ({ ...current, difficulty: event.target.value as TopicLevel }))}
+              onChange={(event) => {
+                setDifficultyTouched(true);
+                setValues((current) => ({ ...current, difficulty: event.target.value as TopicLevel }));
+              }}
             >
               {difficultyOptions.map((option) => (
                 <option key={option} value={option}>{option}</option>
@@ -139,6 +205,7 @@ export function MaterialUploadPage() {
           />
 
           {error ? <div className="mt-4 rounded-2xl border border-[#4e1c24]/50 bg-[#2a0e12] px-4 py-3 text-sm text-[#c26060]">{error}</div> : null}
+          {success ? <div className="mt-4 rounded-2xl border border-emerald-900 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">{success}</div> : null}
 
           {uploaded ? (
             <div className="mt-4 rounded-2xl border border-emerald-900 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">
@@ -151,13 +218,20 @@ export function MaterialUploadPage() {
               <ShieldAlert className="h-4 w-4 text-[#c29f60]" />
               Only professor/admin accounts can upload trusted internal materials.
             </div>
-            <Button onClick={() => void handleSubmit()} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Upload material
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button onClick={() => void handleExtractMetadata()} disabled={!selectedFile || extracting || loading}>
+                {extracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                {extracting ? "Extracting..." : "Auto-fill metadata"}
+              </Button>
+              <Button onClick={() => void handleSubmit()} disabled={loading || extracting}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Upload material
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
     </AppShell>
   );
 }
+

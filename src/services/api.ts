@@ -1,4 +1,4 @@
-import type { AuthResponse, ManagedMaterialResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
+import type { AuthResponse, ExtractedMaterialMetadata, ManagedMaterialResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_STORAGE_KEY = "apollo-library-token";
@@ -79,6 +79,12 @@ export const api = {
   },
   uploadMaterial(formData: FormData) {
     return apiFetch<UploadedMaterialResponse>("/api/materials/upload", {
+      method: "POST",
+      body: formData,
+    }, true);
+  },
+  extractMaterialMetadata(formData: FormData) {
+    return apiFetch<ExtractedMaterialMetadata>("/api/materials/extract-metadata", {
       method: "POST",
       body: formData,
     }, true);

@@ -1,6 +1,6 @@
 export type UserRole = "student" | "professor" | "admin";
 
-export type TopicLevel = "beginner" | "intermediate" | "advanced";
+export type TopicLevel = "beginner" | "intermediate" | "advanced" | "expert";
 export type MaterialKind = "article" | "video" | "book" | "documentation" | "tutorial" | "pdf" | "course" | "other";
 
 export type User = {
@@ -105,6 +105,18 @@ export type UploadedMaterialResponse = {
 };
 
 export type ManagedMaterialResponse = UploadedMaterialResponse;
+
+export type ExtractedMaterialMetadata = {
+  title: string;
+  topics: string[];
+  tags: string[];
+  difficulty: TopicLevel;
+  material_quality_score: number;
+  ease_of_understanding_score: number;
+  trust_score: number;
+  summary: string;
+  short_reason: string;
+};
 
 export type Problem = {
   id: string;
