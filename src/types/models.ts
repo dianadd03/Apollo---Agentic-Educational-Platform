@@ -121,6 +121,39 @@ export type Problem = {
   generated: boolean;
 };
 
+export type ProblemSource = "codeforces" | "leetcode" | "atcoder" | "generated";
+
+export type AggregatedProblem = {
+  id: string;
+  source: ProblemSource;
+  external_id: string;
+  title: string;
+  url: string;
+  raw_difficulty: string | null;
+  normalized_difficulty: number;
+  difficulty_label: TopicLevel;
+  success_rate: number | null;
+  tags: string[];
+  is_generated: boolean;
+  generated_objective: string | null;
+  topic_match: number;
+  last_fetched_at: string;
+};
+
+export type ProblemListMetadata = {
+  topic: string;
+  tags_used: string[];
+  source_breakdown: Record<string, number>;
+  generated_count: number;
+  cached: boolean;
+  fetched_at: string;
+};
+
+export type ProblemListResponse = {
+  problems: AggregatedProblem[];
+  metadata: ProblemListMetadata;
+};
+
 export type FoundationalTask = {
   id: string;
   title: string;

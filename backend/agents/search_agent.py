@@ -17,7 +17,7 @@ BACKEND_AGENTS_DIR = Path(__file__).resolve().parent
 
 
 class WebAgent:
-    api_key = "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"
+    api_key = "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"
 
     def __init__(self):
         self.client = TavilyClient(self.api_key)

@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.api.routes.auth import router as auth_router
 from backend.api.routes.materials import router as materials_router
+from backend.api.routes.problems import router as problems_router
 from backend.api.routes.search import router as search_router
 from backend.api.routes.topics import router as topics_router
 from backend.config import get_settings
@@ -42,3 +43,4 @@ app.include_router(auth_router)
 app.include_router(topics_router)
 app.include_router(materials_router)
 app.include_router(search_router)
+app.include_router(problems_router)
