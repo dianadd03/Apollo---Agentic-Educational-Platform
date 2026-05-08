@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Any
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -36,6 +37,7 @@ class CandidateMaterial(BaseModel):
     is_verified: bool = False
     is_internal: bool = False
     source_of_result: str = "db_internal"
+    review_data: dict[str, Any] | None = None
 
 
 class SearchMetadata(BaseModel):

@@ -7,7 +7,9 @@ import { TopicLevelModal } from "@/components/library/TopicLevelModal";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
-import type { Topic, TopicLevel } from "@/types/models";
+import type { SearchResult, Topic, TopicLevel } from "@/types/models";
+
+const MATERIAL_SEARCH_LIMIT = 20;
 
 export function LibraryPage() {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ export function LibraryPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingTopic, setPendingTopic] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<TopicLevel>("beginner");
+  const [deletingTopicId, setDeletingTopicId] = useState<string | null>(null);
 
   const loadTopics = async () => {
     setLoading(true);
@@ -44,15 +47,41 @@ export function LibraryPage() {
     if (!pendingTopic) return;
     setSaving(true);
     try {
-      const saved = await api.createTopic(pendingTopic, selectedLevel);
+      const topicTitle = pendingTopic;
+      const searchResponse = await api.searchMaterials(topicTitle, MATERIAL_SEARCH_LIMIT);
+      const preloadedMaterials: SearchResult[] = searchResponse.results;
+      const saved = await api.createTopic(topicTitle, selectedLevel);
+
       setTopics((current) => [saved, ...current]);
       setPendingTopic("");
       setError(null);
-      navigate(`/topics/${saved.id}`);
+      navigate(`/topics/${saved.id}`, {
+        state: {
+          topic: saved,
+          materials: preloadedMaterials,
+          searchLoaded: true,
+        },
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to save topic.");
+      setError(err instanceof Error ? err.message : "Unable to search and save topic.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteTopic = async (topic: Topic) => {
+    const confirmed = window.confirm(`Remove "${topic.title}" from your library?`);
+    if (!confirmed) return;
+
+    setDeletingTopicId(topic.id);
+    try {
+      await api.deleteTopic(topic.id);
+      setTopics((current) => current.filter((item) => item.id !== topic.id));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to remove topic.");
+    } finally {
+      setDeletingTopicId(null);
     }
   };
 
@@ -93,7 +122,11 @@ export function LibraryPage() {
           </Card>
         ) : null}
 
-        {loading ? <Card className="p-8 text-sm text-[#dccfa6]/70 border-[#c29f60]/10">Loading your shelf...</Card> : <Bookshelf topics={topics} />}
+        {loading ? (
+          <Card className="p-8 text-sm text-[#dccfa6]/70 border-[#c29f60]/10">Loading your shelf...</Card>
+        ) : (
+          <Bookshelf topics={topics} onDeleteTopic={(topic) => void handleDeleteTopic(topic)} deletingTopicId={deletingTopicId} />
+        )}
       </div>
 
       <TopicLevelModal
@@ -108,4 +141,3 @@ export function LibraryPage() {
     </AppShell>
   );
 }
-

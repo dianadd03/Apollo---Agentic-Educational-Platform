@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import type { AuthResponse, ExtractedMaterialMetadata, ManagedMaterialResponse, MaterialKind, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
+=======
+import type { AuthResponse, ManagedMaterialResponse, SavedSearchResultResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
+>>>>>>> 703db638ef7a73afb3f2a4ae0f338918b1680ed8
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_STORAGE_KEY = "apollo-library-token";
@@ -8,6 +12,9 @@ function getToken() {
 }
 
 export function storeToken(token: string) {
+  if (!token) {
+    throw new Error("Authentication token missing from server response.");
+  }
   localStorage.setItem(TOKEN_STORAGE_KEY, token);
 }
 
@@ -37,6 +44,10 @@ async function apiFetch<T>(path: string, init: RequestInit = {}, auth = false): 
     const payload = await response.json().catch(() => null);
     const message = payload?.detail || `Request failed with status ${response.status}`;
     throw new Error(message);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
@@ -71,11 +82,20 @@ export const api = {
   getTopic(topicId: string) {
     return apiFetch<TopicDetail>(`/api/topics/${topicId}`, {}, true);
   },
+  deleteTopic(topicId: string) {
+    return apiFetch<void>(`/api/topics/${topicId}`, {
+      method: "DELETE",
+    }, true);
+  },
   searchMaterials(topic: string, maxResults?: number) {
     return apiFetch<SearchMaterialsResponse>("/api/search-materials", {
       method: "POST",
       body: JSON.stringify({ topic, max_results: maxResults }),
     }, true);
+  },
+  getSearchHistory(topic: string, limit = 10) {
+    const params = new URLSearchParams({ topic, limit: String(limit) });
+    return apiFetch<SavedSearchResultResponse[]>(`/api/search-materials/history?${params.toString()}`, {}, true);
   },
   uploadMaterial(formData: FormData) {
     return apiFetch<UploadedMaterialResponse>("/api/materials/upload", {
@@ -121,5 +141,22 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ is_active: isActive }),
     }, true);
+  },
+  getProblemsForTopic(
+    topic: string,
+    options?: {
+      platforms?: string[];
+      difficulty?: "beginner" | "intermediate" | "advanced";
+      maxResults?: number;
+      forceRefresh?: boolean;
+    },
+  ) {
+    const params = new URLSearchParams();
+    params.set("topic", topic);
+    options?.platforms?.forEach((p) => params.append("platforms", p));
+    if (options?.difficulty) params.set("difficulty", options.difficulty);
+    if (options?.maxResults) params.set("max_results", String(options.maxResults));
+    if (options?.forceRefresh) params.set("force_refresh", "true");
+    return apiFetch<ProblemListResponse>(`/api/problems/topic-by-name?${params.toString()}`, {}, true);
   },
 };

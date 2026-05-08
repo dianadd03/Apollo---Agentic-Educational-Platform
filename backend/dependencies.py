@@ -3,15 +3,20 @@ from functools import lru_cache
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
+<<<<<<< HEAD
 from backend.agents.extractor_agent import ExtractorAgent
+=======
+from backend.agents.problem_aggregator import ProblemAggregatorAgent
+from backend.agents.problem_providers import AtCoderProvider, CodeforcesProvider
+>>>>>>> 703db638ef7a73afb3f2a4ae0f338918b1680ed8
 from backend.agents.search_agent import SearchAgent
 from backend.config import get_settings
 from backend.db.session import SessionLocal
 from backend.services.auth_service import AuthService
 from backend.services.material_search_service import MaterialSearchService
 from backend.services.material_service import MaterialService
+from backend.services.problem_service import ProblemService
 from backend.services.topic_service import TopicService
-from backend.tools.web_search import WebSearchTool
 
 
 def get_db():
@@ -33,8 +38,7 @@ def get_topic_service(db: Session = Depends(get_db)) -> TopicService:
 @lru_cache(maxsize=1)
 def get_search_agent() -> SearchAgent:
     settings = get_settings()
-    tool = WebSearchTool(settings)
-    return SearchAgent(tool)
+    return SearchAgent(settings.review_agent_dir, advanced_search=settings.review_advanced_search)
 
 
 def get_material_service(db: Session = Depends(get_db)) -> MaterialService:
@@ -47,8 +51,31 @@ def get_material_search_service(db: Session = Depends(get_db)) -> MaterialSearch
 
 
 @lru_cache(maxsize=1)
+<<<<<<< HEAD
 def get_extractor_agent() -> ExtractorAgent:
     return ExtractorAgent()
+=======
+def get_problem_aggregator() -> ProblemAggregatorAgent:
+    settings = get_settings()
+    providers = [CodeforcesProvider(), AtCoderProvider()]
+    return ProblemAggregatorAgent(
+        providers=providers,
+        cache_ttl_hours=settings.problems_cache_ttl_hours,
+        max_per_source=settings.problems_max_per_source,
+        general_threshold=settings.problems_general_threshold,
+        general_generator=None,
+    )
+
+
+def get_problem_service(db: Session = Depends(get_db)) -> ProblemService:
+    settings = get_settings()
+    return ProblemService(
+        db=db,
+        agent=get_problem_aggregator(),
+        cache_ttl_hours=settings.problems_cache_ttl_hours,
+        default_max_results=settings.problems_default_max_results,
+    )
+>>>>>>> 703db638ef7a73afb3f2a4ae0f338918b1680ed8
 
 
 def get_current_user(

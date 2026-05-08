@@ -200,12 +200,20 @@ def test_external_fallback_only_runs_when_internal_coverage_is_insufficient():
     assert service.saved_calls[0]["coverage_source"] == "db_internal_with_web_fallback"
 
 
-def test_persist_external_results_only_saves_strong_candidates():
+def test_persist_external_results_saves_all_agent_candidates():
     topic = make_topic()
     db = MagicMock()
+    added_materials: list[Material] = []
+
+    def remember_added_material(item):
+        if isinstance(item, Material):
+            item.id = item.id or uuid4()
+            added_materials.append(item)
+
+    db.add.side_effect = remember_added_material
     agent = FakeSearchAgent(SearchMaterialsResponse(topic=topic.title, topic_id=str(topic.id), query_used=topic.title, results=[], search_metadata=SearchMetadata(total_results=0)))
     service = MaterialSearchService(db=db, search_agent=agent, default_max_results=5)
-    service._load_material = lambda material_id: db.add.call_args_list[-1].args[0]
+    service._load_material = lambda material_id: next(material for material in added_materials if material.id == material_id)
     service._find_material_by_link = lambda link: None
 
     current_user = make_user()
@@ -234,8 +242,9 @@ def test_persist_external_results_only_saves_strong_candidates():
         ],
     )
 
-    assert len(persisted) == 1
+    assert len(persisted) == 2
     assert persisted[0]["material"].canonical_name == "Strong external"
+    assert persisted[1]["material"].canonical_name == "Weak external"
 
 
 def test_loading_saved_topic_results_preserves_ordering():

@@ -18,11 +18,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
+    const tokenAtRequestStart = localStorage.getItem(api.tokenStorageKey);
     try {
       const currentUser = await api.me();
       setUser(currentUser);
     } catch {
-      clearToken();
+      if (localStorage.getItem(api.tokenStorageKey) === tokenAtRequestStart) {
+        clearToken();
+      }
       setUser(null);
     }
   };
