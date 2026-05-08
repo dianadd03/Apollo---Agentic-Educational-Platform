@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import json
+import re
+from io import BytesIO
 from enum import Enum
+from html import unescape
+from urllib.error import URLError
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 from typing import Any
 
 from fastapi import UploadFile
@@ -24,6 +30,10 @@ class UnreadablePDFError(ExtractorError):
     pass
 
 
+class UnreadableLinkError(ExtractorError):
+    pass
+
+
 class EmptyExtractedTextError(ExtractorError):
     pass
 
@@ -43,8 +53,20 @@ class ExtractedDifficulty(str, Enum):
     expert = "expert"
 
 
+class ExtractedMaterialType(str, Enum):
+    article = "article"
+    video = "video"
+    book = "book"
+    documentation = "documentation"
+    tutorial = "tutorial"
+    pdf = "pdf"
+    course = "course"
+    other = "other"
+
+
 class ExtractedMaterialMetadata(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
+    material_type: ExtractedMaterialType
     topics: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     difficulty: ExtractedDifficulty
@@ -72,27 +94,49 @@ class ExtractedMaterialMetadata(BaseModel):
                 seen.add(key)
         return normalized
 
+    @field_validator("material_type", mode="before")
+    @classmethod
+    def normalize_material_type(cls, value: Any) -> Any:
+        aliases = {
+            "youtube": "video",
+            "website": "documentation",
+            "site": "documentation",
+            "slides": "documentation",
+            "slide": "documentation",
+            "paper": "article",
+            "textbook": "book",
+        }
+        if isinstance(value, str):
+            return aliases.get(value.strip().lower(), value)
+        return value
+
 PROMPT = """
 You are an Extractor Agent for Apollo, an educational platform.
 
-You receive the text content of a professor-uploaded educational material.
+You receive the text content, URL signals, or file content of a professor-uploaded educational material.
 Your job is to extract metadata that helps Apollo organize, rank, and recommend this material.
 
 Extract:
 1. title
-2. topics
-3. tags
-4. difficulty: beginner, intermediate, advanced, or expert
-5. material_quality_score: integer 0 to 100
-6. ease_of_understanding_score: integer 0 to 100
-7. trust_score: integer 0 to 100
-8. summary
-9. short_reason
+2. material_type: article, video, book, documentation, tutorial, pdf, course, or other
+3. topics
+4. tags
+5. difficulty: beginner, intermediate, advanced, or expert
+6. material_quality_score: integer 0 to 100
+7. ease_of_understanding_score: integer 0 to 100
+8. trust_score: integer 0 to 100
+9. summary
+10. short_reason
 
 Important:
 - format and level are dropdown fields in the frontend, so you must return only one of the allowed values.
-- format must be one of: website, youtube, article, book, documentation, tutorial, course, slides, pdf, other.
+- material_type must be one of: article, video, book, documentation, tutorial, pdf, course, other.
 - level must be one of: beginner, intermediate, advanced, expert.
+- Classify YouTube, Vimeo, lecture recordings, and video pages as video.
+- Classify textbook/catalog/archive/book pages as book when they describe a book rather than an article.
+- Classify official API docs, reference docs, and manuals as documentation.
+- Classify step-by-step guides as tutorial.
+- Classify structured MOOC/university course pages as course.
 
 Scoring rules:
 - material_quality_score measures educational quality, structure, completeness, examples, correctness, and usefulness.
@@ -123,6 +167,7 @@ Required JSON format:
 
 {
   "title": "<title>",
+  "material_type": "article",
   "topics": ["topic1", "topic2"],
   "tags": ["tag1", "tag2"],
   "difficulty": "beginner",
@@ -146,8 +191,11 @@ class ExtractorAgent:
         )
         self.system_prompt = PROMPT
 
-    def extract_metadata(self, upload: UploadFile) -> ExtractedMaterialMetadata:
-        text = self.extract_text(upload)
+    def extract_metadata(self, upload: UploadFile | None = None, link: str | None = None) -> ExtractedMaterialMetadata:
+        if upload is None and not link:
+            raise UnsupportedMaterialTypeError("Upload a file or provide a link to extract metadata.")
+
+        text = self.extract_text(upload) if upload is not None else self.extract_link_text(link or "")
         response = self.llm.invoke(
             [
                 ("system", self.system_prompt),
@@ -176,6 +224,45 @@ class ExtractorAgent:
             raise EmptyExtractedTextError("No readable text could be extracted from this file.")
         return text
 
+    def extract_link_text(self, link: str) -> str:
+        parsed = urlparse(link.strip())
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise UnsupportedMaterialTypeError("Provide a valid http or https link.")
+
+        try:
+            request = Request(
+                link,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (compatible; ApolloExtractor/1.0)",
+                    "Accept": "text/html,application/pdf,text/plain,*/*",
+                },
+            )
+            with urlopen(request, timeout=15) as response:
+                content_type = response.headers.get("content-type", "").lower()
+                raw = response.read(5_000_000)
+        except (OSError, URLError) as exc:
+            raise UnreadableLinkError("The provided link could not be fetched.") from exc
+
+        if "application/pdf" in content_type or parsed.path.lower().endswith(".pdf"):
+            text = self._extract_pdf_bytes(raw)
+        else:
+            decoded = raw.decode("utf-8", errors="ignore")
+            text = self._extract_html_text(decoded)
+
+        text = self._clean_text(
+            "\n".join(
+                [
+                    f"URL: {link}",
+                    f"URL host: {parsed.netloc}",
+                    f"Content type: {content_type or 'unknown'}",
+                    text,
+                ]
+            )
+        )
+        if not text:
+            raise EmptyExtractedTextError("No readable text could be extracted from this link.")
+        return text
+
     def _extract_pdf_text(self, upload: UploadFile) -> str:
         try:
             from pypdf import PdfReader
@@ -191,6 +278,18 @@ class ExtractorAgent:
         finally:
             upload.file.seek(0)
 
+    def _extract_pdf_bytes(self, raw: bytes) -> str:
+        try:
+            from pypdf import PdfReader
+        except ImportError as exc:
+            raise UnreadablePDFError("PDF extraction requires the pypdf package.") from exc
+
+        try:
+            reader = PdfReader(BytesIO(raw))
+            return "\n".join(page.extract_text() or "" for page in reader.pages)
+        except Exception as exc:
+            raise UnreadablePDFError("The linked PDF could not be read.") from exc
+
     def _extract_plain_text(self, upload: UploadFile) -> str:
         upload.file.seek(0)
         raw = upload.file.read()
@@ -202,6 +301,18 @@ class ExtractorAgent:
     def _clean_text(self, text: str) -> str:
         lines = [line.strip() for line in text.splitlines()]
         return "\n".join(line for line in lines if line)
+
+    def _extract_html_text(self, html: str) -> str:
+        html = re.sub(r"(?is)<(script|style|noscript).*?>.*?</\1>", " ", html)
+        title_match = re.search(r"(?is)<title[^>]*>(.*?)</title>", html)
+        title = unescape(re.sub(r"\s+", " ", title_match.group(1)).strip()) if title_match else ""
+        meta_values = re.findall(
+            r'(?is)<meta[^>]+(?:name|property)=["\'](?:description|og:title|og:description|twitter:title|twitter:description)["\'][^>]+content=["\']([^"\']+)["\']',
+            html,
+        )
+        body = re.sub(r"(?is)<[^>]+>", " ", html)
+        body = unescape(re.sub(r"\s+", " ", body))
+        return "\n".join([title, *meta_values, body[:20000]])
 
     def _message_content(self, response: Any) -> str:
         try:

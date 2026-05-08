@@ -108,6 +108,7 @@ export type ManagedMaterialResponse = UploadedMaterialResponse;
 
 export type ExtractedMaterialMetadata = {
   title: string;
+  material_type: MaterialKind;
   topics: string[];
   tags: string[];
   difficulty: TopicLevel;

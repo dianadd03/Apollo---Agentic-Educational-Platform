@@ -1,4 +1,4 @@
-import type { AuthResponse, ExtractedMaterialMetadata, ManagedMaterialResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
+import type { AuthResponse, ExtractedMaterialMetadata, ManagedMaterialResponse, MaterialKind, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_STORAGE_KEY = "apollo-library-token";
@@ -81,6 +81,24 @@ export const api = {
     return apiFetch<UploadedMaterialResponse>("/api/materials/upload", {
       method: "POST",
       body: formData,
+    }, true);
+  },
+  createLinkedMaterial(payload: {
+    canonical_name: string;
+    link: string;
+    material_type: MaterialKind;
+    difficulty: TopicLevel;
+    summary?: string | null;
+    quality_score: number;
+    ease_score: number;
+    trust_score: number;
+    tags: string[];
+    topic_titles: string[];
+    is_published: boolean;
+  }) {
+    return apiFetch<UploadedMaterialResponse>("/api/materials", {
+      method: "POST",
+      body: JSON.stringify(payload),
     }, true);
   },
   extractMaterialMetadata(formData: FormData) {

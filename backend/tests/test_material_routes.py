@@ -14,12 +14,13 @@ class FakeExtractorAgent:
         self.called = False
         self.error = error
 
-    def extract_metadata(self, upload):
+    def extract_metadata(self, upload=None, link=None):
         self.called = True
         if self.error:
             raise self.error
         return {
             "title": "Extracted Lecture Notes",
+            "material_type": "video" if link else "pdf",
             "topics": ["Dynamic Programming", "Algorithms"],
             "tags": ["dp", "notes"],
             "difficulty": "intermediate",
@@ -241,7 +242,27 @@ def test_professor_can_extract_material_metadata_without_creating_material():
     assert response.status_code == 200
     assert extractor.called is True
     assert response.json()["title"] == "Extracted Lecture Notes"
+    assert response.json()["material_type"] == "pdf"
     assert response.json()["material_quality_score"] == 84
+
+    app.dependency_overrides.clear()
+
+
+def test_professor_can_extract_link_metadata_without_creating_material():
+    extractor = FakeExtractorAgent()
+    app.dependency_overrides[get_current_user] = lambda: make_user(UserRole.professor)
+    app.dependency_overrides[get_extractor_agent] = lambda: extractor
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/materials/extract-metadata",
+        data={"link": "https://www.youtube.com/watch?v=abc123"},
+    )
+
+    assert response.status_code == 200
+    assert extractor.called is True
+    assert response.json()["material_type"] == "video"
+    assert response.json()["difficulty"] == "intermediate"
 
     app.dependency_overrides.clear()
 
