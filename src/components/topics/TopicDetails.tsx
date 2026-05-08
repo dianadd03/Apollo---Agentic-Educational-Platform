@@ -255,20 +255,6 @@ export function TopicDetails({ topic, materials }: TopicDetailsProps) {
     setCurrentPage(1);
   }, [topic.id, materials.length, selectedLevel, activeTab]);
 
-  useEffect(() => {
-    const availableLevels = MATERIAL_LEVELS.filter((level) =>
-      sortedMaterials.some((item) => (parseReviewData(item)?.level ?? "").toLowerCase() === level),
-    );
-
-    if (!availableLevels.length) {
-      return;
-    }
-
-    if (!availableLevels.includes(selectedLevel)) {
-      setSelectedLevel(availableLevels[0]);
-    }
-  }, [selectedLevel, sortedMaterials]);
-
   const tabContent = {
     Materials: (
       <div className="space-y-5">
