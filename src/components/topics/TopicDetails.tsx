@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { createCodingWorkspaceTasks } from "@/components/topics/CodingReviewWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -223,9 +225,11 @@ function MaterialCard({ item }: { item: SearchResult }) {
 }
 
 export function TopicDetails({ topic, materials }: TopicDetailsProps) {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState<(typeof CONTENT_TABS)[number]>("Materials");
   const [selectedLevel, setSelectedLevel] = useState<(typeof MATERIAL_LEVELS)[number]>("beginner");
+  const codingTasks = useMemo(() => createCodingWorkspaceTasks(topic.coding_tasks), [topic.coding_tasks]);
   const sortedMaterials = useMemo(() => [...materials].sort((left, right) => {
     const leftReview = parseReviewData(left);
     const rightReview = parseReviewData(right);
@@ -354,7 +358,44 @@ export function TopicDetails({ topic, materials }: TopicDetailsProps) {
       </div>
     ),
     Exercises: <FutureSection title="Exercises" items={topic.exercises} emptyLabel="Exercises will appear here when practice generation is enabled." />,
-    "Coding Tasks": <FutureSection title="Coding Tasks" items={topic.coding_tasks} emptyLabel="Coding tasks will appear here when task generation is enabled." />,
+    "Coding Tasks": (
+      <div className="space-y-5">
+        <Card className="rounded-[30px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#1a1d24,#14161d)] p-5 md:p-6">
+          <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Coding review workspace</p>
+          <h3 className="mt-2 text-3xl font-semibold text-[#f4ead6]">Open a dedicated review page</h3>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[#dccfa6]/74">
+            Enter a task or problem in a full-page editor workspace with language selection, draft persistence, structured AI review categories, and code-to-feedback mapping.
+          </p>
+        </Card>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {codingTasks.map((task) => (
+            <Card key={task.id} className="rounded-[24px] border border-[#c29f60]/12 bg-[#12141a]/60 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">{task.kind}</p>
+                  <h4 className="mt-2 text-xl font-semibold text-[#f4ead6]">{task.title}</h4>
+                </div>
+                <Badge tone="warning">Full page</Badge>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-[#dccfa6]/76">{task.prompt}</p>
+              <Button
+                variant="secondary"
+                className="mt-4 rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d]"
+                onClick={() =>
+                  navigate(`/topics/${topic.id}/coding-review?task=${task.id}`, {
+                    state: {
+                      topic,
+                    },
+                  })
+                }
+              >
+                Open code review
+              </Button>
+            </Card>
+          ))}
+        </div>
+      </div>
+    ),
     Roadmap: <FutureSection title="Roadmap" items={topic.roadmap} emptyLabel="Roadmap steps will appear here once backend orchestration is connected." />,
   } as const;
 

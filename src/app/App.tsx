@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { LibraryPage } from "@/pages/LibraryPage";
+import { CodingReviewPage } from "@/pages/CodingReviewPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { ManagedMaterialsPage } from "@/pages/ManagedMaterialsPage";
 import { MaterialUploadPage } from "@/pages/MaterialUploadPage";
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/materials" element={<ManagedMaterialsPage />} />
         <Route path="/materials/upload" element={<MaterialUploadPage />} />
+        <Route path="/topics/:topicId/coding-review" element={<CodingReviewPage />} />
         <Route path="/topics/:topicId" element={<TopicPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
