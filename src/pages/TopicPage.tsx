@@ -120,7 +120,14 @@ export function TopicPage() {
             </div>
           </Card>
 
-          <TopicDetails topic={topic} materials={materials} />
+          <TopicDetails
+            topic={topic}
+            materials={materials}
+            problems={problems}
+            problemsMeta={problemsMeta}
+            problemsLoading={problemsLoading}
+            problemsError={problemsError}
+          />
         </div>
       )}
         </main>
