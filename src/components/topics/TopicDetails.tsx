@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createCodingWorkspaceTasks } from "@/components/topics/CodingReviewWorkspace";
+import { ProblemsSection } from "@/components/problems/ProblemsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { resolveMaterialUrl } from "@/lib/materialUrls";
-import type { SearchResult, TopicDetail } from "@/types/models";
+import type { AggregatedProblem, ProblemListMetadata, SearchResult, TopicDetail } from "@/types/models";
 
 const MATERIALS_PER_PAGE = 5;
 const MATERIAL_LEVELS = ["beginner", "intermediate", "advanced", "expert"] as const;
@@ -15,6 +16,10 @@ const CONTENT_TABS = ["Materials", "Exercises", "Coding Tasks", "Roadmap"] as co
 type TopicDetailsProps = {
   topic: TopicDetail;
   materials: SearchResult[];
+  problems: AggregatedProblem[];
+  problemsMeta: ProblemListMetadata | null;
+  problemsLoading: boolean;
+  problemsError: string | null;
 };
 
 function FutureSection({ title, items, emptyLabel }: { title: string; items: string[]; emptyLabel: string }) {
@@ -224,7 +229,7 @@ function MaterialCard({ item }: { item: SearchResult }) {
   );
 }
 
-export function TopicDetails({ topic, materials }: TopicDetailsProps) {
+export function TopicDetails({ topic, materials, problems, problemsMeta, problemsLoading, problemsError }: TopicDetailsProps) {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState<(typeof CONTENT_TABS)[number]>("Materials");
@@ -343,7 +348,14 @@ export function TopicDetails({ topic, materials }: TopicDetailsProps) {
         </div>
       </div>
     ),
-    Exercises: <FutureSection title="Exercises" items={topic.exercises} emptyLabel="Exercises will appear here when practice generation is enabled." />,
+    Exercises: (
+      <ProblemsSection
+        problems={problems}
+        metadata={problemsMeta}
+        loading={problemsLoading}
+        error={problemsError}
+      />
+    ),
     "Coding Tasks": (
       <div className="space-y-5">
         <Card className="rounded-[30px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#1a1d24,#14161d)] p-5 md:p-6">
