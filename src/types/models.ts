@@ -65,6 +65,17 @@ export type SearchMaterialsResponse = {
   };
 };
 
+export type SavedSearchResultResponse = {
+  id: string;
+  topic: string;
+  topic_id: string;
+  user_id: string;
+  query_text: string;
+  coverage_source: string;
+  created_at: string;
+  results: SearchResult[];
+};
+
 
 export type Material = {
   id: string;
