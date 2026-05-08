@@ -27,8 +27,9 @@ UPDATE users SET role = 'student' WHERE role::text = 'learner';
 UPDATE users SET role = 'professor' WHERE role::text = 'teacher';
 ALTER TABLE users ALTER COLUMN role SET DEFAULT 'student';
 
-UPDATE teacher_admin_profiles SET staff_role = 'professor' WHERE staff_role = 'teacher';
+ALTER TABLE teacher_admin_profiles DROP CONSTRAINT IF EXISTS teacher_admin_profiles_staff_role_check;
 ALTER TABLE teacher_admin_profiles DROP CONSTRAINT IF EXISTS ck_teacher_admin_profiles_staff_role;
+UPDATE teacher_admin_profiles SET staff_role = 'professor' WHERE staff_role = 'teacher';
 ALTER TABLE teacher_admin_profiles
     ADD CONSTRAINT ck_teacher_admin_profiles_staff_role CHECK (staff_role IN ('professor', 'admin'));
 
