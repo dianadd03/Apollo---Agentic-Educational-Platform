@@ -3,12 +3,10 @@ from functools import lru_cache
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
-<<<<<<< HEAD
 from backend.agents.extractor_agent import ExtractorAgent
-=======
 from backend.agents.problem_aggregator import ProblemAggregatorAgent
 from backend.agents.problem_providers import AtCoderProvider, CodeforcesProvider
->>>>>>> 703db638ef7a73afb3f2a4ae0f338918b1680ed8
+from backend.agents.rag_retrieval_agent import RagRetrievalAgent
 from backend.agents.search_agent import SearchAgent
 from backend.config import get_settings
 from backend.db.session import SessionLocal
@@ -47,14 +45,22 @@ def get_material_service(db: Session = Depends(get_db)) -> MaterialService:
 
 def get_material_search_service(db: Session = Depends(get_db)) -> MaterialSearchService:
     settings = get_settings()
-    return MaterialSearchService(db=db, search_agent=get_search_agent(), default_max_results=settings.max_results)
+    search_agent = get_search_agent()
+    rag_agent = RagRetrievalAgent(db=db, search_agent=search_agent)
+    return MaterialSearchService(
+        db=db,
+        search_agent=search_agent,
+        default_max_results=settings.max_results,
+        rag_retrieval_agent=rag_agent,
+    )
 
 
 @lru_cache(maxsize=1)
-<<<<<<< HEAD
 def get_extractor_agent() -> ExtractorAgent:
     return ExtractorAgent()
-=======
+
+
+@lru_cache(maxsize=1)
 def get_problem_aggregator() -> ProblemAggregatorAgent:
     settings = get_settings()
     providers = [CodeforcesProvider(), AtCoderProvider()]
@@ -75,7 +81,7 @@ def get_problem_service(db: Session = Depends(get_db)) -> ProblemService:
         cache_ttl_hours=settings.problems_cache_ttl_hours,
         default_max_results=settings.problems_default_max_results,
     )
->>>>>>> 703db638ef7a73afb3f2a4ae0f338918b1680ed8
+
 
 
 def get_current_user(

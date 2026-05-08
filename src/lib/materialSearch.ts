@@ -34,7 +34,7 @@ export type SearchMaterialsResponse = {
     timestamp: string;
     total_results: number;
     notes: string;
-    coverage_source?: "db_internal" | "db_internal_with_web_fallback" | "web_only" | "cached";
+    coverage_source?: "internal_only" | "internal_plus_web" | "web_only" | "cached" | "db_internal" | "db_internal_with_web_fallback";
     search_result_id?: string | null;
   };
 };
@@ -65,7 +65,7 @@ export function buildWorkspaceFromSearch(topic: string, response: SearchMaterial
     ...(baseWorkspace.topic === "Unknown Topic" ? emptyWorkspace : baseWorkspace),
     topic: response.topic,
     searchMode:
-      response.search_metadata.coverage_source === "db_internal"
+      response.search_metadata.coverage_source === "db_internal" || response.search_metadata.coverage_source === "internal_only"
         ? "internal"
         : mappedMaterials.length > 0
           ? "web-fallback"
@@ -142,7 +142,7 @@ function buildSearchRun(response: SearchMaterialsResponse): AgentRun {
         confidence: response.results.length ? averageConfidence(response.results) : 0,
         retries: 0,
         notes:
-          response.search_metadata.coverage_source === "db_internal"
+          response.search_metadata.coverage_source === "db_internal" || response.search_metadata.coverage_source === "internal_only"
             ? "Internal ranking completed from Apollo materials before any web fallback."
             : "Final ranking included web fallback because internal coverage was insufficient.",
       },

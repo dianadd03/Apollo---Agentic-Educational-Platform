@@ -40,10 +40,18 @@ function FutureSection({ title, items, emptyLabel }: { title: string; items: str
 }
 
 function isTrustedSource(item: SearchResult) {
-  return ["admin", "professor", "verified"].includes(item.source_of_result ?? "");
+  if (item.source_of_result === "web") return false;
+  return ["admin", "professor", "verified", "internal"].includes(item.source_of_result ?? "");
 }
 
 function sourceBadgeLabel(item: SearchResult) {
+  if (item.source_of_result === "web") {
+    return "Web result";
+  }
+  if (isTrustedSource(item)) {
+    return "Trusted internal material";
+  }
+
   switch (item.source_of_result) {
     case "admin":
       return "Admin managed";
@@ -54,11 +62,11 @@ function sourceBadgeLabel(item: SearchResult) {
     case "promoted":
       return "Highly liked";
     case "db_internal":
-      return "Internal";
-    case "web":
-      return "Web search";
+      return "Database result";
+    case "internal":
+      return "Trusted internal material";
     default:
-      return item.is_internal ? "Internal" : "External";
+      return item.is_internal ? "Database result" : "External";
   }
 }
 
@@ -67,8 +75,10 @@ function sourceBadgeTone(item: SearchResult): "success" | "warning" | "info" | "
     case "admin":
     case "professor":
     case "verified":
+    case "internal":
       return "success";
     case "promoted":
+    case "db_internal":
       return "info";
     case "web":
       return "warning";

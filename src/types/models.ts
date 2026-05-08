@@ -60,7 +60,7 @@ export type SearchMaterialsResponse = {
     timestamp: string;
     total_results: number;
     notes: string;
-    coverage_source?: "db_internal" | "db_internal_with_web_fallback" | "web_only" | "cached";
+    coverage_source?: "internal_only" | "internal_plus_web" | "web_only" | "cached" | "db_internal" | "db_internal_with_web_fallback";
     search_result_id?: string | null;
   };
 };

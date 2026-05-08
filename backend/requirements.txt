@@ -4,17 +4,9 @@ pydantic>=2.8.0,<3.0.0
 pydantic-settings>=2.4.0,<3.0.0
 langchain>=0.3.0,<0.4.0
 langchain-community>=0.3.0,<0.4.0
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
 langchain-google-genai>=2.0.0,<3.0.0
 langchain-ollama>=0.2.0,<1.0.0
 pypdf>=5.0.0,<6.0.0
->>>>>>> Stashed changes
-=======
-langchain-google-genai>=2.0.0,<3.0.0
-langchain-ollama>=0.2.0,<1.0.0
->>>>>>> 703db638ef7a73afb3f2a4ae0f338918b1680ed8
 tavily-python>=0.5.0,<1.0.0
 duckduckgo-search>=6.2.0,<7.0.0
 email-validator>=2.2.0,<3.0.0

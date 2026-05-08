@@ -131,3 +131,4 @@ class ReviewAgent:
         jsonText = result["messages"][-1].content
 
         return json.loads(jsonText)["reviews"]
+        

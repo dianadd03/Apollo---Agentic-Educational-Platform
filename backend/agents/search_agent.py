@@ -31,10 +31,10 @@ class WebAgent:
 
     def web_search_agent(self, topic: str, max_results_each=10):
         searches = [
-            {"kind": "website", "query": topic, "domains": []},
-            {"kind": "youtube", "query": f"{topic} tutorial OR lecture", "domains": ["youtube.com"]},
-            {"kind": "article", "query": f"{topic} research paper OR survey OR article", "domains": []},
-            {"kind": "book", "query": f"{topic} book OR textbook", "domains": ["archive.org"]},
+            {"kind": "website", "query": f"{topic} programming OR computer science", "domains": [], "limit": max_results_each},
+            {"kind": "youtube", "query": f"{topic} tutorial OR lecture computer science", "domains": ["youtube.com"], "limit": max(1, max_results_each // 3)},
+            {"kind": "article", "query": f"{topic} research paper OR survey OR article computer science", "domains": [], "limit": max_results_each},
+            {"kind": "book", "query": f"{topic} book OR textbook computer science", "domains": ["archive.org"], "limit": max_results_each},
         ]
 
         context = []
@@ -46,7 +46,7 @@ class WebAgent:
                 search_depth="advanced",
                 include_answer=False,
                 include_domains=search["domains"],
-                max_results=max_results_each,
+                max_results=search.get("limit", max_results_each),
             )
 
             for item in response.get("results", []):
@@ -293,7 +293,7 @@ class _ReviewAgentRunner:
         return topic.strip(), [item for item in parsed if isinstance(item, dict)]
 
     def _review_item(self, item: dict[str, Any]) -> dict[str, Any]:
-        kind = str(item.get("kind") or item.get("format") or "website")
+        kind = str(item.get("kind") or item.get("format") or item.get("type") or "website")
         title = str(item.get("title") or "")
         url = str(item.get("url") or "")
         source_score = self._normalize_source_score(item.get("score"))

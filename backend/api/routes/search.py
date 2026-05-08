@@ -27,6 +27,26 @@ async def search_materials(
         ) from exc
 
 
+@router.get("/api/materials/search", response_model=SearchMaterialsResponse, status_code=status.HTTP_200_OK)
+async def search_materials_by_query(
+    topic: str = Query(..., min_length=1, max_length=200),
+    max_results: int = Query(default=28, ge=1, le=28),
+    current_user: User = Depends(get_current_user),
+    service: MaterialSearchService = Depends(get_material_search_service),
+) -> SearchMaterialsResponse:
+    try:
+        return await service.search_materials(topic=topic, current_user=current_user, max_results=max_results)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to retrieve materials at the moment.",
+        ) from exc
+
+
 @router.get("/api/search-materials/history", response_model=list[SavedSearchResultResponse])
 def get_saved_searches_for_topic(
     topic: str = Query(..., min_length=1, max_length=200),

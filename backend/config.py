@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     log_level: str = "INFO"
     search_provider: Literal["auto", "tavily", "duckduckgo"] = "auto"
-    max_results: int = Field(default=20, ge=1, le=20)
+    max_results: int = Field(default=28, ge=1, le=28)
     tavily_api_key: str | None = None
     review_agent_dir: str = "agents"
     review_advanced_search: bool = False
