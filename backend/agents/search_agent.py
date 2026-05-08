@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+import contextlib
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import Any
@@ -104,13 +105,13 @@ class SearchAgent:
         if not script_path.exists() or script_path.stat().st_size == 0:
             return None
 
-        self._install_agent_import_shims()
-        spec = importlib.util.spec_from_file_location("apollo_local_review_agent", script_path)
-        if spec is None or spec.loader is None:
-            return None
+        with self._agent_import_shims():
+            spec = importlib.util.spec_from_file_location("apollo_local_review_agent", script_path)
+            if spec is None or spec.loader is None:
+                return None
 
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
 
         for factory_name in ("ReviewAgent", "Agent"):
             factory = getattr(module, factory_name, None)
@@ -118,7 +119,14 @@ class SearchAgent:
                 return factory()
         return module
 
-    def _install_agent_import_shims(self) -> None:
+    @contextlib.contextmanager
+    def _agent_import_shims(self):
+        original_modules = {
+            k: sys.modules.get(k) for k in (
+                "websearch", "langchain", "langchain.agents",
+                "langchain_ollama", "langchain_google_genai"
+            )
+        }
         websearch_module = ModuleType("websearch")
         websearch_module.WebAgent = WebAgent
         sys.modules["websearch"] = websearch_module
@@ -137,6 +145,15 @@ class SearchAgent:
         google_module = ModuleType("langchain_google_genai")
         google_module.ChatGoogleGenerativeAI = _ModelShim
         sys.modules["langchain_google_genai"] = google_module
+
+        try:
+            yield
+        finally:
+            for k, v in original_modules.items():
+                if v is None:
+                    sys.modules.pop(k, None)
+                else:
+                    sys.modules[k] = v
 
     def _create_review_agent_runner(self, model: Any, tools: list[Any], system_prompt: str) -> "_ReviewAgentRunner":
         del model, system_prompt

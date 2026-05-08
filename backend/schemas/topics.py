@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-TopicLevel = Literal["beginner", "intermediate", "advanced"]
+TopicLevel = Literal["beginner", "intermediate", "advanced", "expert"]
 
 
 class TopicCreateRequest(BaseModel):

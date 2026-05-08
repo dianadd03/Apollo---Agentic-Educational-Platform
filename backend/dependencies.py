@@ -61,6 +61,13 @@ def get_extractor_agent() -> ExtractorAgent:
 
 
 @lru_cache(maxsize=1)
+def get_foundational_task_agent():
+    from backend.agents.foundational_task_agent import FoundationalTaskAgent
+
+    return FoundationalTaskAgent()
+
+
+@lru_cache(maxsize=1)
 def get_problem_aggregator() -> ProblemAggregatorAgent:
     settings = get_settings()
     providers = [CodeforcesProvider(), AtCoderProvider()]

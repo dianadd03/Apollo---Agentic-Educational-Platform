@@ -189,6 +189,22 @@ export type FoundationalTask = {
   whyInSequence: string;
 };
 
+export type GeneratedTaskExample = {
+  input: string;
+  output: string;
+};
+
+export type GeneratedFoundationalTask = {
+  title: string;
+  task: string;
+  examples: GeneratedTaskExample[];
+};
+
+export type FoundationalTasksResponse = {
+  topic: string;
+  foundational_tasks: GeneratedFoundationalTask[];
+};
+
 export type ReviewFinding = {
   id: string;
   title: string;
