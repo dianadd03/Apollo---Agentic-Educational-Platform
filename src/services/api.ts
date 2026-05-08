@@ -114,4 +114,21 @@ export const api = {
       body: JSON.stringify({ is_active: isActive }),
     }, true);
   },
+  getProblemsForTopic(
+    topic: string,
+    options?: {
+      platforms?: string[];
+      difficulty?: "beginner" | "intermediate" | "advanced";
+      maxResults?: number;
+      forceRefresh?: boolean;
+    },
+  ) {
+    const params = new URLSearchParams();
+    params.set("topic", topic);
+    options?.platforms?.forEach((p) => params.append("platforms", p));
+    if (options?.difficulty) params.set("difficulty", options.difficulty);
+    if (options?.maxResults) params.set("max_results", String(options.maxResults));
+    if (options?.forceRefresh) params.set("force_refresh", "true");
+    return apiFetch<ProblemListResponse>(`/api/problems/topic-by-name?${params.toString()}`, {}, true);
+  },
 };

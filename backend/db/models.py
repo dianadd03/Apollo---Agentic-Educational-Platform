@@ -75,6 +75,13 @@ class FeedbackUsefulness(str, Enum):
     very_useful = "very_useful"
 
 
+class ProblemSource(str, Enum):
+    codeforces = "codeforces"
+    leetcode = "leetcode"
+    atcoder = "atcoder"
+    generated = "generated"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -339,3 +346,52 @@ class TopicSearchResultItem(Base):
 
     search_result: Mapped[TopicSearchResult] = relationship(back_populates="items")
     material: Mapped[Material] = relationship(back_populates="search_result_items")
+
+
+class Problem(Base):
+    __tablename__ = "problems"
+    __table_args__ = (
+        UniqueConstraint("source", "external_id", name="uq_problems_source_external_id"),
+        CheckConstraint("normalized_difficulty >= 1 AND normalized_difficulty <= 10", name="ck_problems_normalized_difficulty"),
+        CheckConstraint("success_rate IS NULL OR (success_rate >= 0 AND success_rate <= 1)", name="ck_problems_success_rate"),
+        Index("ix_problems_source", "source"),
+        Index("ix_problems_difficulty_label", "difficulty_label"),
+        Index("ix_problems_normalized_difficulty", "normalized_difficulty"),
+        Index("ix_problems_last_fetched_at", "last_fetched_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    source: Mapped[ProblemSource] = mapped_column(SqlEnum(ProblemSource, name="problem_source"), nullable=False)
+    external_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    title: Mapped[str] = mapped_column(String(300), nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    raw_difficulty: Mapped[str | None] = mapped_column(String(60))
+    normalized_difficulty: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
+    difficulty_label: Mapped[TopicLevel] = mapped_column(SqlEnum(TopicLevel, name="topic_level"), nullable=False, default=TopicLevel.intermediate)
+    success_rate: Mapped[float | None] = mapped_column(Numeric(4, 3))
+    tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    is_generated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    generated_objective: Mapped[str | None] = mapped_column(Text)
+    last_fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    topic_links: Mapped[list[ProblemTopicLink]] = relationship(back_populates="problem", cascade="all, delete-orphan")
+
+
+class ProblemTopicLink(Base):
+    __tablename__ = "problem_topic_links"
+    __table_args__ = (
+        UniqueConstraint("problem_id", "topic_id", name="uq_problem_topic_links_problem_topic"),
+        CheckConstraint("match_score >= 0 AND match_score <= 1", name="ck_problem_topic_links_match_score"),
+        Index("ix_problem_topic_links_topic_id", "topic_id"),
+        Index("ix_problem_topic_links_problem_id", "problem_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    problem_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("problems.id", ondelete="CASCADE"), nullable=False)
+    topic_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("topics.id", ondelete="CASCADE"), nullable=False)
+    match_score: Mapped[float] = mapped_column(Numeric(4, 3), nullable=False, default=0.5)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    problem: Mapped[Problem] = relationship(back_populates="topic_links")
