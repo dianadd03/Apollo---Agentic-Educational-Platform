@@ -7,6 +7,7 @@ const levels: Array<{ value: TopicLevel; label: string; helper: string }> = [
   { value: "beginner", label: "Beginner", helper: "Foundational explanations and gentler ramp-up." },
   { value: "intermediate", label: "Intermediate", helper: "Balanced materials, exercises, and coding depth." },
   { value: "advanced", label: "Advanced", helper: "Denser content, deeper tasks, and stronger challenge." },
+  { value: "expert", label: "Expert", helper: "Research-heavy resources and specialist depth." },
 ];
 
 type TopicLevelModalProps = {
@@ -36,7 +37,7 @@ export function TopicLevelModal({ open, topic, selectedLevel, onSelect, onClose,
           </button>
         </div>
 
-        <div className="mt-7 grid gap-4 md:grid-cols-3">
+        <div className="mt-7 grid gap-4 md:grid-cols-4">
           {levels.map((level) => (
             <button
               key={level.value}

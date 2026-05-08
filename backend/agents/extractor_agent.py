@@ -129,9 +129,9 @@ Extract:
 10. short_reason
 
 Important:
-- format and level are dropdown fields in the frontend, so you must return only one of the allowed values.
+- material_type and difficulty are dropdown fields in the frontend, so you must return only one of the allowed values.
 - material_type must be one of: article, video, book, documentation, tutorial, pdf, course, other.
-- level must be one of: beginner, intermediate, advanced, expert.
+- difficulty must be one of: beginner, intermediate, advanced, expert.
 - Classify YouTube, Vimeo, lecture recordings, and video pages as video.
 - Classify textbook/catalog/archive/book pages as book when they describe a book rather than an article.
 - Classify official API docs, reference docs, and manuals as documentation.
@@ -143,12 +143,12 @@ Scoring rules:
 - ease_of_understanding_score measures how easy the material is for a student to understand.
 - ease_of_understanding_score must also consider the material format and density. Books, textbooks, research papers, academic courses, and long theoretical PDFs should usually receive a lower ease score than tutorials, slides, guides, or step-by-step lessons, even if they have high quality and trust.
 - A book can have a high material_quality_score and trust_score, but still a medium or low ease_of_understanding_score because it may be dense, long, formal, or require prerequisites.
-- level should usually be inferred from ease_of_understanding_score and prerequisite complexity.
+- difficulty should usually be inferred from ease_of_understanding_score and prerequisite complexity.
 - trust_score measures credibility. Since professor-uploaded materials are usually trusted, start medium-high, but adjust based on citations, references, author/institution info, academic structure, and content completeness.
 - Be strict and realistic.
 - Do not give everything 90+.
 - If the material is short, unclear, incomplete, or unsupported, lower the scores.
-- format and level should be inferred from the material itself and are allowed to overwrite existing dropdown values.
+- material_type and difficulty should be inferred from the material itself and are allowed to overwrite existing dropdown values.
 - Do not preserve previous values if the material clearly belongs to another category or level.
 - Long books, textbooks, research-heavy PDFs, or theoretical academic materials should receive low ease_of_understanding scores even if they are high quality.
 - A 300-500+ page technical textbook should usually have an ease_of_understanding_score around 20-50 unless it is explicitly beginner-friendly.
@@ -186,7 +186,8 @@ class ExtractorAgent:
 
         self.llm = ChatOllama(
             model=MODEL,
-            temperature=0.1,
+            temperature=0.0,
+            format="json",
             metadata={"ls_model_name": "gpt-oss-120b-local"},
         )
         self.system_prompt = PROMPT

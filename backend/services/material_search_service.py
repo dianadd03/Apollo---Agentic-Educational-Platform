@@ -11,6 +11,7 @@ from sqlalchemy import Select, select
 from sqlalchemy.orm import Session, selectinload
 
 from backend.agents.search_agent import SearchAgent
+from backend.agents.rag_retrieval_agent import RagRetrievalAgent
 from backend.db.models import (
     Material,
     MaterialSourceType,
@@ -43,10 +44,17 @@ SOURCE_TYPE_BOOST = {
 
 
 class MaterialSearchService:
-    def __init__(self, db: Session, search_agent: SearchAgent, default_max_results: int) -> None:
+    def __init__(
+        self,
+        db: Session,
+        search_agent: SearchAgent,
+        default_max_results: int,
+        rag_retrieval_agent: RagRetrievalAgent | None = None,
+    ) -> None:
         self._db = db
         self._search_agent = search_agent
         self._default_max_results = default_max_results
+        self._rag_retrieval_agent = rag_retrieval_agent
         self._material_service = MaterialService(db)
 
     async def search_materials(
@@ -55,14 +63,95 @@ class MaterialSearchService:
         current_user: User,
         max_results: int | None = None,
     ) -> SearchMaterialsResponse:
-        topic_record = self._get_or_create_topic(topic)
+        limit = max_results or self._default_max_results
+        if self._rag_retrieval_agent is not None:
+            return await self._search_materials_with_rag(topic=topic, current_user=current_user, max_results=limit)
 
-        external_response = await self._search_agent.search_topic(topic=topic, max_results=max_results or self._default_max_results)
+        topic_record = self._get_or_create_topic(topic)
+        internal_ranked = self._rank_internal_materials(topic, current_user.id)
+
+        if self._has_sufficient_internal_coverage(internal_ranked, limit):
+            selected = internal_ranked[:limit]
+            coverage_source = "db_internal"
+            search_result = self._save_search_result(topic_record, current_user, topic, selected, coverage_source)
+            return self._build_response(topic_record, topic, selected, coverage_source, search_result.id)
+
+        try:
+            external_response = await self._search_agent.search_topic(topic=topic, max_results=limit)
+        except Exception:
+            logger.exception("External search agent failed for topic %s", topic)
+            selected = internal_ranked[:limit]
+            coverage_source = "db_internal" if selected else "web_only"
+            search_result = self._save_search_result(topic_record, current_user, topic, selected, coverage_source)
+            return self._build_response(topic_record, topic, selected, coverage_source, search_result.id)
+
         persisted_external = self._persist_external_results(topic_record, current_user, external_response.results)
-        selected = persisted_external
-        coverage_source = "web_only"
-        search_result = self._save_search_result(topic_record, current_user, topic, selected, coverage_source)
+        selected = self._merge_ranked_candidates(internal_ranked, persisted_external, current_user.id)[:limit]
+        coverage_source = "db_internal_with_web_fallback" if internal_ranked else "web_only"
+        search_result = self._save_search_result(topic_record, current_user, external_response.query_used, selected, coverage_source)
         return self._build_response(topic_record, external_response.query_used, selected, coverage_source, search_result.id)
+
+    async def _search_materials_with_rag(
+        self,
+        topic: str,
+        current_user: User,
+        max_results: int,
+    ) -> SearchMaterialsResponse:
+        topic_record = self._get_or_create_topic(topic)
+        response = await self._rag_retrieval_agent.search(topic=topic, max_results=max_results)
+        rows = self._ranked_rows_from_rag_response(response, topic_record, current_user)
+        search_result = self._save_search_result(
+            topic_record,
+            current_user,
+            response.query_used,
+            rows,
+            response.search_metadata.coverage_source,
+        )
+        response.topic_id = str(topic_record.id)
+        response.search_metadata.search_result_id = str(search_result.id)
+        return response
+
+    def _ranked_rows_from_rag_response(
+        self,
+        response: SearchMaterialsResponse,
+        topic_record: Topic,
+        current_user: User,
+    ) -> list[dict[str, Any]]:
+        web_candidates = [candidate for candidate in response.results if candidate.source_of_result == "web"]
+        web_rows = self._persist_external_results(topic_record, current_user, web_candidates) if web_candidates else []
+        web_rows_by_url = {self._dedupe_key(row["material"]): row for row in web_rows}
+
+        rows: list[dict[str, Any]] = []
+        for candidate in response.results:
+            if candidate.source_of_result == "web":
+                web_key = self._dedupe_candidate_url(candidate)
+                row = web_rows_by_url.get(web_key)
+                if row is not None:
+                    rows.append({**row, "score": candidate.score or row["score"], "user_id": current_user.id})
+                continue
+
+            if candidate.material_id is None:
+                continue
+            try:
+                material = self._load_material(self._ensure_uuid(candidate.material_id))
+            except Exception:
+                logger.exception("Skipping material %s while saving RAG search result.", candidate.material_id)
+                continue
+            rows.append(
+                {
+                    "material": material,
+                    "score": candidate.score or candidate.confidence,
+                    "source_of_result": candidate.source_of_result,
+                    "user_id": current_user.id,
+                }
+            )
+        return rows
+
+    def _dedupe_candidate_url(self, candidate: CandidateMaterial) -> str:
+        if candidate.url:
+            parsed = urlparse(candidate.url)
+            return f"{parsed.netloc.lower().replace('www.', '')}{parsed.path.rstrip('/')}"
+        return candidate.title.lower()
 
     def get_saved_results_for_topic(
         self,
@@ -225,7 +314,12 @@ class MaterialSearchService:
             self._to_candidate_material(row["material"], row["score"], row["user_id"], row["source_of_result"])
             for row in ranked_materials
         ]
-        notes = "Returned only from external web search results scored by the review agent."
+        notes_by_source = {
+            "db_internal": "Internal Apollo materials covered this topic strongly enough, so web fallback was skipped.",
+            "db_internal_with_web_fallback": "Apollo combined internal materials with external web fallback results.",
+            "web_only": "Returned external web search results scored by the review agent.",
+        }
+        notes = notes_by_source.get(coverage_source, "Returned ranked Apollo material results.")
         return SearchMaterialsResponse(
             topic=topic_record.title,
             topic_id=str(topic_record.id),
@@ -483,6 +577,8 @@ class MaterialSearchService:
         material.tags.append(MaterialTag(material_id=material.id, category=topic_title, relevance=1.0))
 
     def _source_of_result(self, material: Material) -> str:
+        if material.source_type not in {MaterialSourceType.admin_managed, MaterialSourceType.professor_managed}:
+            return "web"
         if material.is_verified:
             return "verified"
         if material.source_type == MaterialSourceType.admin_managed:

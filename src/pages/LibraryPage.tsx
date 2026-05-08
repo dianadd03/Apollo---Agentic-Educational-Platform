@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
 import type { SearchResult, Topic, TopicLevel } from "@/types/models";
 
-const MATERIAL_SEARCH_LIMIT = 20;
+const MATERIAL_SEARCH_LIMIT = 28;
 
 export function LibraryPage() {
   const navigate = useNavigate();

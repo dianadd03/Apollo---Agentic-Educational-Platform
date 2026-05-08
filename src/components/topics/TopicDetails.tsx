@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { resolveMaterialUrl } from "@/lib/materialUrls";
-import type { AggregatedProblem, ProblemListMetadata, SearchResult, TopicDetail } from "@/types/models";
+import { api } from "@/services/api";
+import type { AggregatedProblem, GeneratedFoundationalTask, ProblemListMetadata, SearchResult, TopicDetail } from "@/types/models";
 
 const MATERIALS_PER_PAGE = 5;
 const MATERIAL_LEVELS = ["beginner", "intermediate", "advanced", "expert"] as const;
@@ -40,10 +41,18 @@ function FutureSection({ title, items, emptyLabel }: { title: string; items: str
 }
 
 function isTrustedSource(item: SearchResult) {
-  return ["admin", "professor", "verified"].includes(item.source_of_result ?? "");
+  if (item.source_of_result === "web") return false;
+  return ["admin", "professor", "verified", "internal"].includes(item.source_of_result ?? "");
 }
 
 function sourceBadgeLabel(item: SearchResult) {
+  if (item.source_of_result === "web") {
+    return "Web result";
+  }
+  if (isTrustedSource(item)) {
+    return "Trusted internal material";
+  }
+
   switch (item.source_of_result) {
     case "admin":
       return "Admin managed";
@@ -54,11 +63,11 @@ function sourceBadgeLabel(item: SearchResult) {
     case "promoted":
       return "Highly liked";
     case "db_internal":
-      return "Internal";
-    case "web":
-      return "Web search";
+      return "Database result";
+    case "internal":
+      return "Trusted internal material";
     default:
-      return item.is_internal ? "Internal" : "External";
+      return item.is_internal ? "Database result" : "External";
   }
 }
 
@@ -67,8 +76,10 @@ function sourceBadgeTone(item: SearchResult): "success" | "warning" | "info" | "
     case "admin":
     case "professor":
     case "verified":
+    case "internal":
       return "success";
     case "promoted":
+    case "db_internal":
       return "info";
     case "web":
       return "warning";
@@ -229,11 +240,49 @@ function MaterialCard({ item }: { item: SearchResult }) {
   );
 }
 
+function GeneratedTaskCard({ task, index }: { task: GeneratedFoundationalTask; index: number }) {
+  return (
+    <Card className="rounded-[24px] border border-[#c29f60]/12 bg-[#12141a]/60 p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Problem {index + 1}</p>
+          <h4 className="mt-2 text-xl font-semibold text-[#f4ead6]">{task.title}</h4>
+        </div>
+        <Badge tone="info">Generated</Badge>
+      </div>
+      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[#dccfa6]/78">{task.task}</p>
+
+      <div className="mt-5 space-y-4">
+        <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Examples</p>
+        {task.examples.map((example, exampleIndex) => (
+          <div key={`${task.title}-${exampleIndex}`} className="rounded-[20px] border border-[#c29f60]/10 bg-[#171920] p-4">
+            <p className="text-sm font-semibold text-[#f4ead6]">Example {exampleIndex + 1}</p>
+            <div className="mt-3 grid gap-3 lg:grid-cols-2">
+              <div>
+                <p className="mb-1.5 text-[11px] uppercase tracking-[0.18em] text-[#a3835b]">Input</p>
+                <pre className="min-h-[56px] whitespace-pre-wrap rounded-[14px] border border-[#c29f60]/10 bg-[#0f1117] p-3 text-xs leading-5 text-[#f4ead6]">{example.input}</pre>
+              </div>
+              <div>
+                <p className="mb-1.5 text-[11px] uppercase tracking-[0.18em] text-[#a3835b]">Output</p>
+                <pre className="min-h-[56px] whitespace-pre-wrap rounded-[14px] border border-[#c29f60]/10 bg-[#0f1117] p-3 text-xs leading-5 text-[#f4ead6]">{example.output}</pre>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export function TopicDetails({ topic, materials, problems, problemsMeta, problemsLoading, problemsError }: TopicDetailsProps) {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState<(typeof CONTENT_TABS)[number]>("Materials");
   const [selectedLevel, setSelectedLevel] = useState<(typeof MATERIAL_LEVELS)[number]>("beginner");
+  const [generatedTasks, setGeneratedTasks] = useState<GeneratedFoundationalTask[]>([]);
+  const [taskTopic, setTaskTopic] = useState<string | null>(null);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [tasksError, setTasksError] = useState<string | null>(null);
   const codingTasks = useMemo(() => createCodingWorkspaceTasks(topic.coding_tasks), [topic.coding_tasks]);
   const sortedMaterials = useMemo(() => [...materials].sort((left, right) => {
     const leftReview = parseReviewData(left);
@@ -259,6 +308,27 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
   useEffect(() => {
     setCurrentPage(1);
   }, [topic.id, materials.length, selectedLevel, activeTab]);
+
+  useEffect(() => {
+    setGeneratedTasks([]);
+    setTaskTopic(null);
+    setTasksError(null);
+    setTasksLoading(false);
+  }, [topic.id]);
+
+  const handleGenerateTasks = async () => {
+    setTasksLoading(true);
+    setTasksError(null);
+    try {
+      const response = await api.generateFoundationalTasks(topic.title);
+      setGeneratedTasks(response.foundational_tasks);
+      setTaskTopic(response.topic);
+    } catch (err) {
+      setTasksError(err instanceof Error ? err.message : "Unable to generate foundational tasks.");
+    } finally {
+      setTasksLoading(false);
+    }
+  };
 
   const tabContent = {
     Materials: (
@@ -359,39 +429,73 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
     "Coding Tasks": (
       <div className="space-y-5">
         <Card className="rounded-[30px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#1a1d24,#14161d)] p-5 md:p-6">
-          <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Coding review workspace</p>
-          <h3 className="mt-2 text-3xl font-semibold text-[#f4ead6]">Open a dedicated review page</h3>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Foundational task agent</p>
+              <h3 className="mt-2 text-3xl font-semibold text-[#f4ead6]">Generate focused coding problems</h3>
+            </div>
+            <Button
+              variant="secondary"
+              className="self-start rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d] md:self-auto"
+              disabled={tasksLoading}
+              onClick={() => void handleGenerateTasks()}
+            >
+              {tasksLoading ? "Generating tasks..." : generatedTasks.length ? "Regenerate tasks" : "Generate Foundational Tasks"}
+            </Button>
+          </div>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-[#dccfa6]/74">
-            Enter a task or problem in a full-page editor workspace with language selection, draft persistence, structured AI review categories, and code-to-feedback mapping.
+            Create programming problems for {topic.title}, with examples formatted for quick practice.
           </p>
         </Card>
-        <div className="grid gap-4 lg:grid-cols-2">
-          {codingTasks.map((task) => (
-            <Card key={task.id} className="rounded-[24px] border border-[#c29f60]/12 bg-[#12141a]/60 p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">{task.kind}</p>
-                  <h4 className="mt-2 text-xl font-semibold text-[#f4ead6]">{task.title}</h4>
+
+        {tasksError ? (
+          <Card className="rounded-[24px] border-rose-900 bg-rose-950/40 p-4 text-sm text-rose-300">
+            {tasksError}
+          </Card>
+        ) : null}
+
+        {generatedTasks.length ? (
+          <div className="space-y-4">
+            {taskTopic ? <p className="text-sm text-[#dccfa6]/70">Generated for {taskTopic}</p> : null}
+            {generatedTasks.map((task, index) => (
+              <GeneratedTaskCard key={`${task.title}-${index}`} task={task} index={index} />
+            ))}
+          </div>
+        ) : (
+          <Card className="rounded-[24px] border border-[#c29f60]/12 bg-[#12141a]/60 p-6 text-sm leading-7 text-[#dccfa6]/72">
+            No generated foundational tasks yet. Use the button above when you are ready to create practice problems for this topic.
+          </Card>
+        )}
+
+        {codingTasks.length ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {codingTasks.map((task) => (
+              <Card key={task.id} className="rounded-[24px] border border-[#c29f60]/12 bg-[#12141a]/60 p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">{task.kind}</p>
+                    <h4 className="mt-2 text-xl font-semibold text-[#f4ead6]">{task.title}</h4>
+                  </div>
+                  <Badge tone="warning">Full page</Badge>
                 </div>
-                <Badge tone="warning">Full page</Badge>
-              </div>
-              <p className="mt-3 text-sm leading-6 text-[#dccfa6]/76">{task.prompt}</p>
-              <Button
-                variant="secondary"
-                className="mt-4 rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d]"
-                onClick={() =>
-                  navigate(`/topics/${topic.id}/coding-review?task=${task.id}`, {
-                    state: {
-                      topic,
-                    },
-                  })
-                }
-              >
-                Open code review
-              </Button>
-            </Card>
-          ))}
-        </div>
+                <p className="mt-3 text-sm leading-6 text-[#dccfa6]/76">{task.prompt}</p>
+                <Button
+                  variant="secondary"
+                  className="mt-4 rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d]"
+                  onClick={() =>
+                    navigate(`/topics/${topic.id}/coding-review?task=${task.id}`, {
+                      state: {
+                        topic,
+                      },
+                    })
+                  }
+                >
+                  Open code review
+                </Button>
+              </Card>
+            ))}
+          </div>
+        ) : null}
       </div>
     ),
     Roadmap: <FutureSection title="Roadmap" items={topic.roadmap} emptyLabel="Roadmap steps will appear here once backend orchestration is connected." />,

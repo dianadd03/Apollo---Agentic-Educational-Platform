@@ -6,12 +6,19 @@ from pydantic import BaseModel, Field, field_validator
 
 
 ResourceType = Literal["video", "article", "book", "documentation", "tutorial", "other"]
-CoverageSource = Literal["db_internal", "db_internal_with_web_fallback", "web_only", "cached"]
+CoverageSource = Literal[
+    "internal_only",
+    "internal_plus_web",
+    "web_only",
+    "cached",
+    "db_internal",
+    "db_internal_with_web_fallback",
+]
 
 
 class SearchMaterialsRequest(BaseModel):
     topic: str = Field(..., min_length=1, max_length=200)
-    max_results: int | None = Field(default=None, ge=1, le=20)
+    max_results: int | None = Field(default=None, ge=1, le=28)
 
     @field_validator("topic")
     @classmethod

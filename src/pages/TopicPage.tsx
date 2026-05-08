@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { api } from "@/services/api";
 import type { AggregatedProblem, ProblemListMetadata, SearchResult, TopicDetail } from "@/types/models";
 
-const MATERIAL_SEARCH_LIMIT = 20;
+const MATERIAL_SEARCH_LIMIT = 28;
 
 type TopicPageLocationState = {
   topic?: TopicDetail | null;

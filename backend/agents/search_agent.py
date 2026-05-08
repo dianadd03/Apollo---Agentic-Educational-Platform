@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+import contextlib
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import Any
@@ -31,10 +32,10 @@ class WebAgent:
 
     def web_search_agent(self, topic: str, max_results_each=10):
         searches = [
-            {"kind": "website", "query": topic, "domains": []},
-            {"kind": "youtube", "query": f"{topic} tutorial OR lecture", "domains": ["youtube.com"]},
-            {"kind": "article", "query": f"{topic} research paper OR survey OR article", "domains": []},
-            {"kind": "book", "query": f"{topic} book OR textbook", "domains": ["archive.org"]},
+            {"kind": "website", "query": f"{topic} programming OR computer science", "domains": [], "limit": max_results_each},
+            {"kind": "youtube", "query": f"{topic} tutorial OR lecture computer science", "domains": ["youtube.com"], "limit": max(1, max_results_each // 3)},
+            {"kind": "article", "query": f"{topic} research paper OR survey OR article computer science", "domains": [], "limit": max_results_each},
+            {"kind": "book", "query": f"{topic} book OR textbook computer science", "domains": ["archive.org"], "limit": max_results_each},
         ]
 
         context = []
@@ -46,7 +47,7 @@ class WebAgent:
                 search_depth="advanced",
                 include_answer=False,
                 include_domains=search["domains"],
-                max_results=max_results_each,
+                max_results=search.get("limit", max_results_each),
             )
 
             for item in response.get("results", []):
@@ -104,13 +105,13 @@ class SearchAgent:
         if not script_path.exists() or script_path.stat().st_size == 0:
             return None
 
-        self._install_agent_import_shims()
-        spec = importlib.util.spec_from_file_location("apollo_local_review_agent", script_path)
-        if spec is None or spec.loader is None:
-            return None
+        with self._agent_import_shims():
+            spec = importlib.util.spec_from_file_location("apollo_local_review_agent", script_path)
+            if spec is None or spec.loader is None:
+                return None
 
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
 
         for factory_name in ("ReviewAgent", "Agent"):
             factory = getattr(module, factory_name, None)
@@ -118,7 +119,14 @@ class SearchAgent:
                 return factory()
         return module
 
-    def _install_agent_import_shims(self) -> None:
+    @contextlib.contextmanager
+    def _agent_import_shims(self):
+        original_modules = {
+            k: sys.modules.get(k) for k in (
+                "websearch", "langchain", "langchain.agents",
+                "langchain_ollama", "langchain_google_genai"
+            )
+        }
         websearch_module = ModuleType("websearch")
         websearch_module.WebAgent = WebAgent
         sys.modules["websearch"] = websearch_module
@@ -137,6 +145,15 @@ class SearchAgent:
         google_module = ModuleType("langchain_google_genai")
         google_module.ChatGoogleGenerativeAI = _ModelShim
         sys.modules["langchain_google_genai"] = google_module
+
+        try:
+            yield
+        finally:
+            for k, v in original_modules.items():
+                if v is None:
+                    sys.modules.pop(k, None)
+                else:
+                    sys.modules[k] = v
 
     def _create_review_agent_runner(self, model: Any, tools: list[Any], system_prompt: str) -> "_ReviewAgentRunner":
         del model, system_prompt
@@ -293,7 +310,7 @@ class _ReviewAgentRunner:
         return topic.strip(), [item for item in parsed if isinstance(item, dict)]
 
     def _review_item(self, item: dict[str, Any]) -> dict[str, Any]:
-        kind = str(item.get("kind") or item.get("format") or "website")
+        kind = str(item.get("kind") or item.get("format") or item.get("type") or "website")
         title = str(item.get("title") or "")
         url = str(item.get("url") or "")
         source_score = self._normalize_source_score(item.get("score"))

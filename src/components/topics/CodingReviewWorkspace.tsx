@@ -194,9 +194,9 @@ function categoryIcon(category: ReviewCategory) {
 
 function escapeHtml(value: string) {
   return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function highlightLine(line: string, language: SupportedLanguage) {

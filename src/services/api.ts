@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import type { AuthResponse, ExtractedMaterialMetadata, ManagedMaterialResponse, MaterialKind, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
-=======
-import type { AuthResponse, ManagedMaterialResponse, SavedSearchResultResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
->>>>>>> 703db638ef7a73afb3f2a4ae0f338918b1680ed8
+import type { AuthResponse, ExtractedMaterialMetadata, FoundationalTasksResponse, ManagedMaterialResponse, MaterialKind, ProblemListResponse, SavedSearchResultResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_STORAGE_KEY = "apollo-library-token";
@@ -82,6 +78,12 @@ export const api = {
   getTopic(topicId: string) {
     return apiFetch<TopicDetail>(`/api/topics/${topicId}`, {}, true);
   },
+  generateFoundationalTasks(topic: string) {
+    return apiFetch<FoundationalTasksResponse>("/api/topics/foundational-tasks", {
+      method: "POST",
+      body: JSON.stringify({ topic }),
+    }, true);
+  },
   deleteTopic(topicId: string) {
     return apiFetch<void>(`/api/topics/${topicId}`, {
       method: "DELETE",
@@ -146,7 +148,7 @@ export const api = {
     topic: string,
     options?: {
       platforms?: string[];
-      difficulty?: "beginner" | "intermediate" | "advanced";
+      difficulty?: TopicLevel;
       maxResults?: number;
       forceRefresh?: boolean;
     },
