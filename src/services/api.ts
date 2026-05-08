@@ -1,4 +1,4 @@
-import type { AuthResponse, ManagedMaterialResponse, ProblemListResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
+import type { AuthResponse, ManagedMaterialResponse, SavedSearchResultResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_STORAGE_KEY = "apollo-library-token";
@@ -88,6 +88,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ topic, max_results: maxResults }),
     }, true);
+  },
+  getSearchHistory(topic: string, limit = 10) {
+    const params = new URLSearchParams({ topic, limit: String(limit) });
+    return apiFetch<SavedSearchResultResponse[]>(`/api/search-materials/history?${params.toString()}`, {}, true);
   },
   uploadMaterial(formData: FormData) {
     return apiFetch<UploadedMaterialResponse>("/api/materials/upload", {
