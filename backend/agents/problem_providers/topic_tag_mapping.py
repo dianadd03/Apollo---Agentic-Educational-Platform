@@ -57,6 +57,14 @@ def topic_to_tags(topic: str) -> list[str]:
         return []
     if key in TOPIC_TO_TAGS:
         return list(TOPIC_TO_TAGS[key])
+
+    # Match user input written without spaces (e.g. "dynamicprogramming")
+    key_no_space = key.replace(" ", "")
+    for known_key, tags in TOPIC_TO_TAGS.items():
+        if known_key.replace(" ", "") == key_no_space:
+            return list(tags)
+
+    # Substring fallback
     for known_key, tags in TOPIC_TO_TAGS.items():
         if known_key in key or key in known_key:
             return list(tags)
