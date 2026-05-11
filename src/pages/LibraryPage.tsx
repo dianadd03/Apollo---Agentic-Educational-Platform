@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { Bookshelf } from "@/components/library/Bookshelf";
 import { SearchBar } from "@/components/library/SearchBar";
-import { TopicLevelModal } from "@/components/library/TopicLevelModal";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
-import type { SearchResult, Topic, TopicLevel } from "@/types/models";
+import type { SearchResult, Topic } from "@/types/models";
 
 const MATERIAL_SEARCH_LIMIT = 28;
+const DEFAULT_TOPIC_LEVEL = "beginner" as const;
 
 export function LibraryPage() {
   const navigate = useNavigate();
@@ -17,8 +17,6 @@ export function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pendingTopic, setPendingTopic] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState<TopicLevel>("beginner");
   const [deletingTopicId, setDeletingTopicId] = useState<string | null>(null);
 
   const loadTopics = async () => {
@@ -38,22 +36,14 @@ export function LibraryPage() {
     void loadTopics();
   }, []);
 
-  const handleSearch = (topic: string) => {
-    setPendingTopic(topic);
-    setSelectedLevel("beginner");
-  };
-
-  const handleCreateTopic = async () => {
-    if (!pendingTopic) return;
+  const handleSearch = async (topicTitle: string) => {
     setSaving(true);
     try {
-      const topicTitle = pendingTopic;
       const searchResponse = await api.searchMaterials(topicTitle, MATERIAL_SEARCH_LIMIT);
       const preloadedMaterials: SearchResult[] = searchResponse.results;
-      const saved = await api.createTopic(topicTitle, selectedLevel);
+      const saved = await api.createTopic(topicTitle, DEFAULT_TOPIC_LEVEL);
 
       setTopics((current) => [saved, ...current]);
-      setPendingTopic("");
       setError(null);
       navigate(`/topics/${saved.id}`, {
         state: {
@@ -94,7 +84,7 @@ export function LibraryPage() {
               <p className="text-sm uppercase tracking-[0.24em] text-[#a3835b]">Your study collection</p>
               <h2 className="mt-3 text-5xl font-semibold tracking-tight text-[#f4ead6] font-serif">Search a technical topic, then save it as a book in your learning library.</h2>
               <p className="mt-4 max-w-2xl text-base leading-8 text-[#dccfa6]/80">
-                Apollo is still a learning platform first. The library metaphor simply helps organize saved topics visually, while level remains selected per topic after search.
+                Apollo is still a learning platform first. The library metaphor simply helps organize saved topics visually while search takes you directly into the topic workbench.
               </p>
               <div className="mt-8">
                 <SearchBar onSearch={handleSearch} loading={saving} />
@@ -107,9 +97,9 @@ export function LibraryPage() {
                 <p className="mt-2 text-sm text-[#dccfa6]/70">Every saved topic appears as a book on your shelf.</p>
               </Card>
               <Card className="p-5 border-[#c29f60]/20 bg-[linear-gradient(135deg,#1c1e26,#15171e)]">
-                <p className="text-sm text-[#a3835b]">Per-topic difficulty</p>
-                <p className="mt-2 text-2xl font-semibold text-[#f4ead6] font-serif">Beginner, intermediate, or advanced</p>
-                <p className="mt-2 text-sm text-[#dccfa6]/70">Chosen after search, not during authentication.</p>
+                <p className="text-sm text-[#a3835b]">Search flow</p>
+                <p className="mt-2 text-2xl font-semibold text-[#f4ead6] font-serif">Search, save, and open the topic directly</p>
+                <p className="mt-2 text-sm text-[#dccfa6]/70">The topic is added to your shelf and opened immediately after materials are loaded.</p>
               </Card>
             </div>
           </div>
@@ -128,16 +118,6 @@ export function LibraryPage() {
           <Bookshelf topics={topics} onDeleteTopic={(topic) => void handleDeleteTopic(topic)} deletingTopicId={deletingTopicId} />
         )}
       </div>
-
-      <TopicLevelModal
-        open={Boolean(pendingTopic)}
-        topic={pendingTopic}
-        selectedLevel={selectedLevel}
-        onSelect={setSelectedLevel}
-        onClose={() => setPendingTopic("")}
-        onConfirm={() => void handleCreateTopic()}
-        loading={saving}
-      />
     </AppShell>
   );
 }

@@ -240,7 +240,15 @@ function MaterialCard({ item }: { item: SearchResult }) {
   );
 }
 
-function GeneratedTaskCard({ task, index }: { task: GeneratedFoundationalTask; index: number }) {
+function GeneratedTaskCard({
+  task,
+  index,
+  onOpenCodeReview,
+}: {
+  task: GeneratedFoundationalTask;
+  index: number;
+  onOpenCodeReview: () => void;
+}) {
   return (
     <Card className="rounded-[24px] border border-[#c29f60]/12 bg-[#12141a]/60 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -270,6 +278,14 @@ function GeneratedTaskCard({ task, index }: { task: GeneratedFoundationalTask; i
           </div>
         ))}
       </div>
+
+      <Button
+        variant="secondary"
+        className="mt-5 rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d]"
+        onClick={onOpenCodeReview}
+      >
+        Open code review
+      </Button>
     </Card>
   );
 }
@@ -458,7 +474,18 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
           <div className="space-y-4">
             {taskTopic ? <p className="text-sm text-[#dccfa6]/70">Generated for {taskTopic}</p> : null}
             {generatedTasks.map((task, index) => (
-              <GeneratedTaskCard key={`${task.title}-${index}`} task={task} index={index} />
+              <GeneratedTaskCard
+                key={`${task.title}-${index}`}
+                task={task}
+                index={index}
+                onOpenCodeReview={() =>
+                  navigate(`/topics/${topic.id}/coding-review`, {
+                    state: {
+                      topic,
+                    },
+                  })
+                }
+              />
             ))}
           </div>
         ) : (

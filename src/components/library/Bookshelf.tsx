@@ -17,7 +17,7 @@ export function Bookshelf({ topics, onDeleteTopic, deletingTopicId }: BookshelfP
         </div>
         <h2 className="mt-6 text-4xl font-semibold text-[#f4ead6] font-serif">Start your first topic shelf</h2>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-[#dccfa6]/80">
-          Search a technical topic, choose the appropriate level for that topic, and Apollo will save it as a study book inside your personal learning library.
+          Search a technical topic and Apollo will save it as a study book inside your personal learning library.
         </p>
       </div>
     );
@@ -51,5 +51,4 @@ export function Bookshelf({ topics, onDeleteTopic, deletingTopicId }: BookshelfP
     </div>
   );
 }
-
 
