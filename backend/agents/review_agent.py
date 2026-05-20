@@ -7,33 +7,22 @@ from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 import numpy as np
 
-from websearch import WebAgent
-from langchain_google_genai import ChatGoogleGenerativeAI
-
-TOPIC = "Algorithms"
+from web_agent import WebAgent
 MODEL = "gpt-oss:120b-cloud"
 
 webAgent = WebAgent()
 
-
-def get_web_results(topic: str, max_results_each: int = 5):
-    """Get web results for a given topic: sites, videos, articles, books."""
-    return webAgent.web_search_agent(topic, max_results_each)
-
-
 def extract_web_site(link: str) -> str:
-    """Extract the text from the given link"""
+    """Extract information from the given link"""
     return webAgent.web_extract_agent(link)
 
 
-def level_from_scores(ease_of_understanding_score: int) -> Literal["beginner", "intermediate", "advanced", "expert"]:
-    """Determine the level based on the ease_of_understanding score."""
-
-    if ease_of_understanding_score >= 85:
+def level_from_score(ease_of_understanding_score: int) -> Literal["beginner", "intermediate", "advanced", "expert"]:
+    if ease_of_understanding_score >= 80:
         return "beginner"
-    elif ease_of_understanding_score >= 55:
+    elif ease_of_understanding_score >= 50:
         return "intermediate"
-    elif ease_of_understanding_score >= 35:
+    elif ease_of_understanding_score >= 30:
         return "advanced"
     else:
         return "expert"
@@ -56,49 +45,53 @@ def level_from_scores(ease_of_understanding_score: int) -> Literal["beginner", "
 PROMPT = """
 You are a Review Agent for an educational platform.
 
-You will receive a searched topic, and web results for that topic. You will then evaluate each result by assigning two integer scores from 0 to 100, and an overall level (beginner, intermediate, advanced, expert) based on the scores.
+You will receive:
+- a searched topic
+- a list of web results for that topic
+
+Your task is to evaluate each result and assign two integer scores from 0 to 100.
+
+Scoring dimensions
 
 1. material_quality_score
-- Measures how good the material is overall for the searched topic.
-- Includes relevance, usefulness for learning, credibility, and title/source fit.
-- Takes into account the format of the result (website, youtube, article, book) and how well it matches the user's learning intent.
+- Rates how strong the material is overall for the requested topic.
+- Considers topical relevance, educational usefulness, source credibility, and consistency between the title/source and the likely content.
+- Also considers whether the material format is a good fit for the user’s likely learning intent.
 
 2. ease_of_understanding_score
-- Measures how easy the material is likely to understand for a typical learner.
-- Infer this mainly from the title, type, and apparent educational format.
-- Take into account whether there are prerequisites needed to understand the material, and whether it looks like beginner-friendly teaching material or advanced/specialized material.
+- Rates how accessible the material is for a typical learner.
+- Inferred mainly from the title, material type, presentation style, and likely difficulty level.
+- Considers prerequisite knowledge, conceptual density, and whether the material appears to explain concepts clearly and progressively.
 
-Rules:
-- Return integer scores only, 0 to 100.
+Rules
+- Return integer scores only, from 0 to 100.
 - Be strict and realistic.
-- Do not cluster all scores unless justified.
-- A material can be relevant but difficult.
-- A material can be easy but low quality.
-- Judge mostly from topic, format, title, and URL.
-- Use input search score only as a weak signal.
-- Keep short_reason under 20 words.
+- Do not cluster scores unless clearly justified by the inputs.
+- A result can be high quality but difficult.
+- A result can be easy to understand but low quality.
+- Use only the provided tools for extraction.
+- Judge primarily from the provided topic, format, title, URL, and any provided snippet or metadata.
+- If a result seems weak, unclear, or suspiciously low-quality, use extraction to reassess it before assigning final scores.
+- Treat the input search score only as a weak signal.
+- Do not include duplicate links in the final reviews.
+- If duplicate links appear, keep only the one with the highest material_quality_score.
+- Do not output reasoning or explanations outside the JSON.
 
-
-USE INTERNAL REASONING FOR THE SCORES
-
-Output format:
-Return ONLY valid JSON.
-No markdown.
-No explanations outside JSON.
+Output format
+Return only valid JSON.
 
 The JSON structure must be:
 
 {
   "topic": "<topic>",
   "reviews": [
-      {
+    {
       "format": "<format>",
       "title": "<title>",
       "url": "<url>",
       "material_quality_score": <integer 0-100>,
-      "ease_of_understanding_score": <integer 0-100>,
-      "level" : {"beginner", "intermediate", "advanced", "expert"}
-      }
+      "ease_of_understanding_score": <integer 0-100>
+    }
   ]
 }
 """
@@ -114,21 +107,38 @@ class ReviewAgent:
         self.system_prompt = PROMPT
         self.agent = create_agent(
             model=llm,
-            tools=[get_web_results, extract_web_site],
+            tools=[extract_web_site],
             system_prompt=self.system_prompt
         )
 
     def review(self, topic: str, advanced: bool = False):
         if advanced:
-            web_results = get_web_results(topic, max_results_each=10)
+            web_results = webAgent.web_search_agent(topic, max_results_each=5)
         else:
-            web_results = get_web_results(topic, max_results_each=5)
+            web_results = webAgent.web_search_agent(topic, max_results_each=3)
 
         result = self.agent.invoke(
-            {"messages": [{"role": "user", "content": topic + " with web search results: " + json.dumps(web_results)}]}
+            {"messages": [{"role": "user", "content": "TOPIC: " + topic + " with web search results: " + json.dumps(web_results)}]}
         )
 
         jsonText = result["messages"][-1].content
 
-        return json.loads(jsonText)["reviews"]
+        reviews = json.loads(jsonText)["reviews"]
+        reviews = [r for r in reviews if r["material_quality_score"] >= 20]
+
+        for r in reviews:
+            r["level"] = level_from_score(r["ease_of_understanding_score"])
+
+            title = str(r["title"]).upper()
+            if "BEGINNER" in title or "INTRODUCTION" in title or "BASIC" in title or "TUTORIAL" in title or "DUMMIES" in title or "START" in title:
+                r["level"] = "beginner"
+            if "INTERMEDIATE" in title or "MEDIUM" in title or "PRACTICE" in title:
+                r["level"] = "intermediate"
+            if "ADVANCED" in title or "HIGH-LEVEL" in title or "HIGH LEVEL" in title:
+                r["level"] = "advanced"
+            if "EXPERT" in title or "DEEP DIVE" in title or "DEEP-DIVE" in title:
+                r["level"] = "expert"
+
+            
+        return reviews
         

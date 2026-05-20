@@ -23,7 +23,7 @@ from backend.schemas.search_results import CandidateMaterial, SearchMaterialsRes
 from backend.services.material_search_service import MaterialSearchService
 
 
-class FakeSearchAgent:
+class FakeReviewSearch:
     def __init__(self, response: SearchMaterialsResponse) -> None:
         self.response = response
         self.calls = 0
@@ -34,8 +34,8 @@ class FakeSearchAgent:
 
 
 class SearchServiceHarness(MaterialSearchService):
-    def __init__(self, internal_ranked, external_ranked, search_agent, topic_record, db=None) -> None:
-        super().__init__(db=db or MagicMock(), search_agent=search_agent, default_max_results=5)
+    def __init__(self, internal_ranked, external_ranked, review_search, topic_record, db=None) -> None:
+        super().__init__(db=db or MagicMock(), review_search=review_search, default_max_results=5)
         self.internal_ranked = internal_ranked
         self.external_ranked = external_ranked
         self.topic_record = topic_record
@@ -153,7 +153,7 @@ def test_db_first_retrieval_skips_external_when_internal_coverage_is_sufficient(
         )
         for index in range(3)
     ]
-    agent = FakeSearchAgent(
+    agent = FakeReviewSearch(
         SearchMaterialsResponse(topic=topic.title, topic_id=str(topic.id), query_used=topic.title, results=[], search_metadata=SearchMetadata(total_results=0))
     )
     service = SearchServiceHarness(strong_materials, [], agent, topic)
@@ -171,7 +171,7 @@ def test_external_fallback_only_runs_when_internal_coverage_is_insufficient():
     topic = make_topic()
     weak_internal = [ranked_entry(make_material("Weak internal"), 0.41)]
     external_material = ranked_entry(make_material("External strong", link="https://docs.example.org/dp"), 0.78, "web")
-    agent = FakeSearchAgent(
+    agent = FakeReviewSearch(
         SearchMaterialsResponse(
             topic=topic.title,
             topic_id=str(topic.id),
@@ -211,8 +211,8 @@ def test_persist_external_results_saves_all_agent_candidates():
             added_materials.append(item)
 
     db.add.side_effect = remember_added_material
-    agent = FakeSearchAgent(SearchMaterialsResponse(topic=topic.title, topic_id=str(topic.id), query_used=topic.title, results=[], search_metadata=SearchMetadata(total_results=0)))
-    service = MaterialSearchService(db=db, search_agent=agent, default_max_results=5)
+    agent = FakeReviewSearch(SearchMaterialsResponse(topic=topic.title, topic_id=str(topic.id), query_used=topic.title, results=[], search_metadata=SearchMetadata(total_results=0)))
+    service = MaterialSearchService(db=db, review_search=agent, default_max_results=5)
     service._load_material = lambda material_id: next(material for material in added_materials if material.id == material_id)
     service._find_material_by_link = lambda link: None
 
@@ -267,8 +267,8 @@ def test_loading_saved_topic_results_preserves_ordering():
     )
     db = MagicMock()
     db.scalars.return_value = SimpleNamespace(all=lambda: [search_result])
-    agent = FakeSearchAgent(SearchMaterialsResponse(topic=topic.title, topic_id=str(topic.id), query_used=topic.title, results=[], search_metadata=SearchMetadata(total_results=0)))
-    service = MaterialSearchService(db=db, search_agent=agent, default_max_results=5)
+    agent = FakeReviewSearch(SearchMaterialsResponse(topic=topic.title, topic_id=str(topic.id), query_used=topic.title, results=[], search_metadata=SearchMetadata(total_results=0)))
+    service = MaterialSearchService(db=db, review_search=agent, default_max_results=5)
 
     history = service.get_saved_results_for_topic(topic.title, make_user())
 
@@ -279,8 +279,8 @@ def test_loading_saved_topic_results_preserves_ordering():
 def test_verified_professor_materials_rank_ahead_of_general_materials():
     topic_text = "Dynamic Programming"
     db = MagicMock()
-    agent = FakeSearchAgent(SearchMaterialsResponse(topic=topic_text, query_used=topic_text, results=[], search_metadata=SearchMetadata(total_results=0)))
-    service = MaterialSearchService(db=db, search_agent=agent, default_max_results=5)
+    agent = FakeReviewSearch(SearchMaterialsResponse(topic=topic_text, query_used=topic_text, results=[], search_metadata=SearchMetadata(total_results=0)))
+    service = MaterialSearchService(db=db, review_search=agent, default_max_results=5)
 
     general = make_material("Dynamic Programming Notes", source_type=MaterialSourceType.general_internet, verified=False, likes=0)
     professor_verified = make_material(

@@ -1,4 +1,7 @@
 from functools import lru_cache
+import sys
+from pathlib import Path
+from typing import Any
 
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
@@ -7,13 +10,13 @@ from backend.agents.extractor_agent import ExtractorAgent
 from backend.agents.problem_aggregator import ProblemAggregatorAgent
 from backend.agents.problem_providers import AtCoderProvider, CodeforcesProvider
 from backend.agents.rag_retrieval_agent import RagRetrievalAgent
-from backend.agents.search_agent import SearchAgent
 from backend.config import get_settings
 from backend.db.session import SessionLocal
 from backend.services.auth_service import AuthService
 from backend.services.material_search_service import MaterialSearchService
 from backend.services.material_service import MaterialService
 from backend.services.problem_service import ProblemService
+from backend.services.review_search_adapter import ReviewSearchAdapter
 from backend.services.topic_service import TopicService
 
 
@@ -34,9 +37,15 @@ def get_topic_service(db: Session = Depends(get_db)) -> TopicService:
 
 
 @lru_cache(maxsize=1)
-def get_search_agent() -> SearchAgent:
-    settings = get_settings()
-    return SearchAgent(settings.review_agent_dir, advanced_search=settings.review_advanced_search)
+def get_review_agent() -> Any:
+    agents_dir = Path(__file__).resolve().parent / "agents"
+    agents_dir_text = str(agents_dir)
+    if agents_dir_text not in sys.path:
+        sys.path.insert(0, agents_dir_text)
+
+    from backend.agents.review_agent import ReviewAgent
+
+    return ReviewAgent()
 
 
 def get_material_service(db: Session = Depends(get_db)) -> MaterialService:
@@ -45,11 +54,14 @@ def get_material_service(db: Session = Depends(get_db)) -> MaterialService:
 
 def get_material_search_service(db: Session = Depends(get_db)) -> MaterialSearchService:
     settings = get_settings()
-    search_agent = get_search_agent()
-    rag_agent = RagRetrievalAgent(db=db, search_agent=search_agent)
+    review_search = ReviewSearchAdapter(
+        review_agent=get_review_agent(),
+        advanced_search=settings.review_advanced_search,
+    )
+    rag_agent = RagRetrievalAgent(db=db, review_search=review_search)
     return MaterialSearchService(
         db=db,
-        search_agent=search_agent,
+        review_search=review_search,
         default_max_results=settings.max_results,
         rag_retrieval_agent=rag_agent,
     )

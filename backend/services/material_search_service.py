@@ -3,14 +3,13 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 from urllib.parse import urlparse
 from uuid import UUID
 
 from sqlalchemy import Select, select
 from sqlalchemy.orm import Session, selectinload
 
-from backend.agents.search_agent import SearchAgent
 from backend.agents.rag_retrieval_agent import RagRetrievalAgent
 from backend.db.models import (
     Material,
@@ -43,16 +42,21 @@ SOURCE_TYPE_BOOST = {
 }
 
 
+class ReviewSearchLike(Protocol):
+    async def search_topic(self, topic: str, max_results: int) -> SearchMaterialsResponse:
+        ...
+
+
 class MaterialSearchService:
     def __init__(
         self,
         db: Session,
-        search_agent: SearchAgent,
+        review_search: ReviewSearchLike,
         default_max_results: int,
         rag_retrieval_agent: RagRetrievalAgent | None = None,
     ) -> None:
         self._db = db
-        self._search_agent = search_agent
+        self._review_search = review_search
         self._default_max_results = default_max_results
         self._rag_retrieval_agent = rag_retrieval_agent
         self._material_service = MaterialService(db)
@@ -77,7 +81,7 @@ class MaterialSearchService:
             return self._build_response(topic_record, topic, selected, coverage_source, search_result.id)
 
         try:
-            external_response = await self._search_agent.search_topic(topic=topic, max_results=limit)
+            external_response = await self._review_search.search_topic(topic=topic, max_results=limit)
         except Exception:
             logger.exception("External search agent failed for topic %s", topic)
             selected = internal_ranked[:limit]
@@ -578,7 +582,7 @@ class MaterialSearchService:
 
     def _source_of_result(self, material: Material) -> str:
         if material.source_type not in {MaterialSourceType.admin_managed, MaterialSourceType.professor_managed}:
-            return "web"
+            return "db_material"
         if material.is_verified:
             return "verified"
         if material.source_type == MaterialSourceType.admin_managed:
@@ -612,6 +616,8 @@ class MaterialSearchService:
     def _reason_for_inclusion(self, material: Material, source_of_result: str) -> str:
         if source_of_result == "web":
             return "Saved external result for future reuse after fallback retrieval because it remained strong after ranking."
+        if source_of_result == "db_material":
+            return "Database material ranked using topic relevance, quality, ease, source trust, and likes."
         if material.is_verified:
             return "Verified internal material ranked highly for this topic based on relevance, trust, and engagement."
         return "Internal material ranked using topic relevance, tags, quality, ease, source trust, and likes."

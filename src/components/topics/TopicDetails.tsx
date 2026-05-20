@@ -64,6 +64,8 @@ function sourceBadgeLabel(item: SearchResult) {
       return "Highly liked";
     case "db_internal":
       return "Database result";
+    case "db_material":
+      return "Database material";
     case "internal":
       return "Trusted internal material";
     default:
@@ -80,6 +82,7 @@ function sourceBadgeTone(item: SearchResult): "success" | "warning" | "info" | "
       return "success";
     case "promoted":
     case "db_internal":
+    case "db_material":
       return "info";
     case "web":
       return "warning";
@@ -494,7 +497,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
           </Card>
         )}
 
-        {codingTasks.length ? (
+        {/* {codingTasks.length ? (
           <div className="grid gap-4 lg:grid-cols-2">
             {codingTasks.map((task) => (
               <Card key={task.id} className="rounded-[24px] border border-[#c29f60]/12 [background:var(--topic-card-bg)] p-5">
@@ -522,7 +525,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
               </Card>
             ))}
           </div>
-        ) : null}
+        ) : null} */}
       </div>
     ),
     Roadmap: <FutureSection title="Roadmap" items={topic.roadmap} emptyLabel="Roadmap steps will appear here once backend orchestration is connected." />,
