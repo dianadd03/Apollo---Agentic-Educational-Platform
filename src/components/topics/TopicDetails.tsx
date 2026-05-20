@@ -494,7 +494,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
           </Card>
         )}
 
-        {codingTasks.length ? (
+        {/* {codingTasks.length ? (
           <div className="grid gap-4 lg:grid-cols-2">
             {codingTasks.map((task) => (
               <Card key={task.id} className="rounded-[24px] border border-[#c29f60]/12 bg-[#12141a]/60 p-5">
@@ -522,7 +522,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
               </Card>
             ))}
           </div>
-        ) : null}
+        ) : null} */}
       </div>
     ),
     Roadmap: <FutureSection title="Roadmap" items={topic.roadmap} emptyLabel="Roadmap steps will appear here once backend orchestration is connected." />,
