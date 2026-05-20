@@ -21,15 +21,15 @@ export function Sidebar() {
         </div>
         <div>
           <p className="text-xs uppercase tracking-[0.28em] text-[#a3835b]">Apollo</p>
-          <p className="text-sm text-[#dccfa6]">Learning platform</p>
+          <p className="text-sm text-[var(--btn-secondary-text)]">Learning platform</p>
         </div>
       </div>
 
-      <div className="mb-6 rounded-[24px] border border-[#c29f60]/20 bg-[linear-gradient(180deg,#1c1e26,#15171e)] p-5 shadow-[inset_0_1px_0_rgba(194,159,96,0.1)] text-[#f4ead6]">
+      <div className="mb-6 rounded-[24px] border border-[var(--btn-secondary-border)] bg-[var(--subtle-bg)] p-5 shadow-[inset_0_1px_0_rgba(194,159,96,0.1)] text-[var(--foreground)]">
         <p className="text-xs uppercase tracking-[0.24em] text-[#a3835b]">Reader profile</p>
-        <p className="mt-3 text-xl font-semibold text-[#f4ead6]">{user?.name ?? "Learner"}</p>
+        <p className="mt-3 text-xl font-semibold text-[var(--foreground)]">{user?.name ?? "Learner"}</p>
         <p className="mt-2 text-sm uppercase tracking-[0.18em] text-[#c29f60]">{user?.role ?? "student"}</p>
-        <p className="mt-2 text-sm leading-7 text-[#dccfa6]/80">
+        <p className="mt-2 text-sm leading-7 text-[var(--library-copy-color)]">
           Search topics, assign a level per topic, and keep your study collection organized like a curated academic shelf.
         </p>
       </div>
@@ -45,8 +45,8 @@ export function Sidebar() {
                 cn(
                   "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
                   isActive
-                    ? "bg-[#2c221d] border border-[#c29f60]/20 text-[#f4ead6] shadow-[0_12px_24px_rgba(0,0,0,0.3)]"
-                    : "text-[#dccfa6]/70 hover:bg-[#1c1e26] hover:text-[#f4ead6]"
+                    ? "bg-[var(--sidebar-active-bg)] border border-[var(--sidebar-active-border)] text-[var(--sidebar-active-text)] shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
+                    : "text-[var(--btn-ghost-text)] hover:bg-[var(--sidebar-hover-bg)] hover:text-[var(--btn-secondary-hover-text)]"
                 )
               }
             >
@@ -57,15 +57,15 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto rounded-[24px] border border-[#c29f60]/20 bg-[linear-gradient(180deg,#1a1c23,#12141a)] p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[#f4ead6]">
+      <div className="mt-auto rounded-[24px] border border-[var(--btn-secondary-border)] bg-[var(--subtle-bg)] p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
           <GraduationCap className="h-4 w-4 text-[#c29f60]" />
           Study principle
         </div>
-        <p className="mt-2 text-sm leading-7 text-[#dccfa6]/70">Level selection happens after topic search, so difficulty stays tied to the topic rather than the account.</p>
+        <p className="mt-2 text-sm leading-7 text-[var(--library-copy-color)]">Level selection happens after topic search, so difficulty stays tied to the topic rather than the account.</p>
       </div>
 
-      <Button variant="ghost" className="mt-4 justify-start text-[#dccfa6] hover:text-[#f4ead6] hover:bg-[#1c1e26]" onClick={logout}>
+      <Button variant="ghost" className="mt-4 justify-start text-[var(--btn-ghost-text)] hover:text-[var(--btn-ghost-hover-text)] hover:bg-[var(--sidebar-hover-bg)]" onClick={logout}>
         <LogOut className="mr-2 h-4 w-4" />
         Logout
       </Button>

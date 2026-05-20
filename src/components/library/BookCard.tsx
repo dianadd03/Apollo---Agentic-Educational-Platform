@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import type { Topic } from "@/types/models";
 
 const coverThemes = [
@@ -67,8 +66,7 @@ export function BookCard({ topic, index, onDelete, deleting }: BookCardProps) {
       <div className="absolute top-0 right-6 w-3 h-16 bg-[#a31a1a] shadow-[2px_4px_8px_rgba(0,0,0,0.5)] z-0 rounded-b-sm translate-y-[-10px] group-hover:translate-y-0 transition-transform duration-300" />
       
       <div className="relative z-20 flex flex-col justify-end pt-3 bg-gradient-to-t from-black/80 to-transparent p-4 h-24 mb-1 mr-1">
-        <div className="flex justify-between items-end">
-          <Badge tone="warning" className="capitalize bg-[#2c221d] text-[#c29f60] border border-[#c29f60]/30 shadow-md">{topic.level}</Badge>
+        <div className="flex justify-end">
           <p className="text-[10px] uppercase tracking-[0.2em] text-[#dccfa6]/60 text-right">Added<br/>{new Date(topic.created_at).toLocaleDateString()}</p>
         </div>
       </div>
