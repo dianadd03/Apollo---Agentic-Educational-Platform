@@ -1,4 +1,3 @@
 export LANGSMITH_TRACING=true
 export LANGSMITH_ENDPOINT=https://api.smith.langchain.com
-export LANGSMITH_API_KEY=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
 export LANGSMITH_PROJECT="Apollo"
