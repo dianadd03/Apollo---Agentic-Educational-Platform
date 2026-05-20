@@ -64,6 +64,8 @@ function sourceBadgeLabel(item: SearchResult) {
       return "Highly liked";
     case "db_internal":
       return "Database result";
+    case "db_material":
+      return "Database material";
     case "internal":
       return "Trusted internal material";
     default:
@@ -80,6 +82,7 @@ function sourceBadgeTone(item: SearchResult): "success" | "warning" | "info" | "
       return "success";
     case "promoted":
     case "db_internal":
+    case "db_material":
       return "info";
     case "web":
       return "warning";

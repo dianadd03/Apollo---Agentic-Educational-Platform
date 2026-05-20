@@ -18,11 +18,11 @@ def extract_web_site(link: str) -> str:
 
 
 def level_from_score(ease_of_understanding_score: int) -> Literal["beginner", "intermediate", "advanced", "expert"]:
-    if ease_of_understanding_score >= 85:
+    if ease_of_understanding_score >= 80:
         return "beginner"
-    elif ease_of_understanding_score >= 55:
+    elif ease_of_understanding_score >= 50:
         return "intermediate"
-    elif ease_of_understanding_score >= 35:
+    elif ease_of_understanding_score >= 30:
         return "advanced"
     else:
         return "expert"
@@ -125,7 +125,20 @@ class ReviewAgent:
 
         reviews = json.loads(jsonText)["reviews"]
         reviews = [r for r in reviews if r["material_quality_score"] >= 20]
+
         for r in reviews:
             r["level"] = level_from_score(r["ease_of_understanding_score"])
+
+            title = str(r["title"]).upper()
+            if "BEGINNER" in title or "INTRODUCTION" in title or "BASIC" in title or "TUTORIAL" in title or "DUMMIES" in title or "START" in title:
+                r["level"] = "beginner"
+            if "INTERMEDIATE" in title or "MEDIUM" in title or "PRACTICE" in title:
+                r["level"] = "intermediate"
+            if "ADVANCED" in title or "HIGH-LEVEL" in title or "HIGH LEVEL" in title:
+                r["level"] = "advanced"
+            if "EXPERT" in title or "DEEP DIVE" in title or "DEEP-DIVE" in title:
+                r["level"] = "expert"
+
+            
         return reviews
         
