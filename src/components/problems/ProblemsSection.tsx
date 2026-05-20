@@ -35,15 +35,15 @@ export function ProblemsSection({ problems, metadata, loading, error }: Problems
   }, [problems, platform, difficulty]);
 
   return (
-    <Card className="p-6 border-[#c29f60]/20 bg-[#15171e]/90">
+    <Card className="p-6 border-[var(--btn-secondary-border)] bg-[var(--subtle-bg)]">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h3 className="section-title">Practice problems</h3>
-          <p className="mt-1 text-sm text-[#dccfa6]/70">
+          <p className="mt-1 text-sm text-[var(--library-copy-color)]">
             Aggregated from Codeforces, LeetCode, AtCoder, and AI-generated bridging problems.
           </p>
           {metadata ? (
-            <div className="mt-2 flex flex-wrap gap-2 text-xs text-[#dccfa6]/60">
+            <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--library-copy-color)]">
               {metadata.tags_used.length > 0 && (
                 <span>Tags: {metadata.tags_used.join(", ")}</span>
               )}
@@ -56,7 +56,7 @@ export function ProblemsSection({ problems, metadata, loading, error }: Problems
         </div>
         <div className="flex flex-wrap gap-2">
           <select
-            className="rounded-xl border border-[#c29f60]/20 bg-[#12141a] px-3 py-2 text-sm text-[#f4ead6]"
+            className="rounded-xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-text)]"
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
           >
@@ -67,7 +67,7 @@ export function ProblemsSection({ problems, metadata, loading, error }: Problems
             <option value="generated">AI Generated</option>
           </select>
           <select
-            className="rounded-xl border border-[#c29f60]/20 bg-[#12141a] px-3 py-2 text-sm text-[#f4ead6]"
+            className="rounded-xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-text)]"
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value)}
           >
@@ -81,17 +81,17 @@ export function ProblemsSection({ problems, metadata, loading, error }: Problems
 
       <div className="mt-5">
         {loading ? (
-          <p className="text-sm text-[#dccfa6]/60">Loading practice problems...</p>
+          <p className="text-sm text-[var(--library-copy-color)]">Loading practice problems...</p>
         ) : error ? (
           <p className="text-sm text-rose-300">{error}</p>
         ) : filtered.length === 0 ? (
-          <p className="text-sm text-[#dccfa6]/70">
+          <p className="text-sm text-[var(--library-copy-color)]">
             No practice problems match these filters yet. Try a broader topic or different filters.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-[#c29f60]/10">
+          <div className="overflow-x-auto rounded-2xl border border-[var(--table-row-border)]">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-[#12141a]/70 text-[#a3835b]">
+              <thead className="bg-[var(--table-header-bg)] text-[var(--table-header-text)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Title</th>
                   <th className="px-4 py-3 font-medium">Source</th>
@@ -104,10 +104,10 @@ export function ProblemsSection({ problems, metadata, loading, error }: Problems
               </thead>
               <tbody>
                 {filtered.map((p) => (
-                  <tr key={p.id} className="border-t border-[#c29f60]/10 hover:bg-[#1c1e26]/60">
+                  <tr key={p.id} className="border-t border-[var(--table-row-border)] hover:bg-[var(--table-row-hover-bg)]">
                     <td className="px-4 py-3 max-w-md">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-[#f4ead6]">{p.title}</span>
+                        <span className="font-semibold text-[var(--foreground)]">{p.title}</span>
                         {p.is_generated && (
                           <Badge tone="warning" className="inline-flex items-center gap-1">
                             <Sparkles className="h-3 w-3" /> AI
@@ -115,29 +115,29 @@ export function ProblemsSection({ problems, metadata, loading, error }: Problems
                         )}
                       </div>
                       {p.generated_objective && (
-                        <p className="mt-1 text-xs text-[#dccfa6]/60">{p.generated_objective}</p>
+                        <p className="mt-1 text-xs text-[var(--library-copy-color)]">{p.generated_objective}</p>
                       )}
                       {p.tags.length > 0 && (
                         <p className="mt-1 text-xs text-[#a3835b]">{p.tags.slice(0, 4).join(" · ")}</p>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-[#dccfa6]/85">{SOURCE_LABELS[p.source] ?? p.source}</td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">{SOURCE_LABELS[p.source] ?? p.source}</td>
                     <td className="px-4 py-3">
                       <Badge tone={DIFFICULTY_TONES[p.difficulty_label] ?? "default"} className="capitalize">
                         {p.difficulty_label}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-[#dccfa6]/85">{p.normalized_difficulty}/10</td>
-                    <td className="px-4 py-3 text-[#dccfa6]/85">
+                    <td className="px-4 py-3 text-[var(--foreground)]">{p.normalized_difficulty}/10</td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">
                       {p.success_rate !== null ? `${Math.round(p.success_rate * 100)}%` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-[#dccfa6]/85">{Math.round(p.topic_match * 100)}%</td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">{Math.round(p.topic_match * 100)}%</td>
                     <td className="px-4 py-3">
                       <a
-                        href={p.url}
+                         href={p.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-[#c29f60] hover:text-[#f4ead6]"
+                        className="inline-flex items-center gap-1 text-[#c29f60] hover:text-[var(--foreground)]"
                       >
                         Open <ExternalLink className="h-4 w-4" />
                       </a>

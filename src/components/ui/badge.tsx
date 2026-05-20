@@ -10,11 +10,11 @@ export function Badge({ className, tone = "default", ...props }: BadgeProps) {
     <span
       className={cn(
         "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] border",
-        tone === "default" && "bg-[#1c1e26] text-[#dccfa6] border-[#c29f60]/20",
-        tone === "success" && "bg-[#121e14] text-[#8fa68a] border-[#243b29]/40",
-        tone === "warning" && "bg-[#2c221d] text-[#c29f60] border-[#4e232e]/40",
-        tone === "danger" && "bg-[#2a0e12] text-[#c26060] border-[#4e1c24]/40",
-        tone === "info" && "bg-[#1c2e4a] text-[#8fa6c2] border-[#2c3e57]/40",
+        tone === "default" && "bg-[var(--badge-default-bg)] text-[var(--badge-default-text)] border-[var(--badge-default-border)]",
+        tone === "success" && "bg-[var(--badge-success-bg)] text-[var(--badge-success-text)] border-[var(--badge-success-border)]",
+        tone === "warning" && "bg-[var(--badge-warning-bg)] text-[var(--badge-warning-text)] border-[var(--badge-warning-border)]",
+        tone === "danger" && "bg-[var(--badge-danger-bg)] text-[var(--badge-danger-text)] border-[var(--badge-danger-border)]",
+        tone === "info" && "bg-[var(--badge-info-bg)] text-[var(--badge-info-text)] border-[var(--badge-info-border)]",
         className,
       )}
       {...props}

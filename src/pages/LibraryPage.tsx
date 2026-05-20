@@ -7,12 +7,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
 import type { SearchResult, Topic } from "@/types/models";
+import { useSearch } from "@/context/SearchContext";
 
 const MATERIAL_SEARCH_LIMIT = 28;
 const DEFAULT_TOPIC_LEVEL = "beginner" as const;
 
 export function LibraryPage() {
   const navigate = useNavigate();
+  const { searchQuery } = useSearch();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,6 +77,10 @@ export function LibraryPage() {
     }
   };
 
+  const filteredTopics = topics.filter((t) =>
+    t.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <AppShell title="Learning Library" subtitle="Search-driven learning platform with a bookshelf front">
       <div className="space-y-6">
@@ -82,24 +88,21 @@ export function LibraryPage() {
           <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr] xl:items-center">
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-[#a3835b]">Your study collection</p>
-              <h2 className="mt-3 text-5xl font-semibold tracking-tight text-[#f4ead6] font-serif">Search a technical topic, then save it as a book in your learning library.</h2>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-[#dccfa6]/80">
-                Apollo is still a learning platform first. The library metaphor simply helps organize saved topics visually while search takes you directly into the topic workbench.
-              </p>
+              <h2 className="mt-3 text-5xl font-semibold tracking-tight text-[var(--foreground)] font-serif">Search a technical topic, then save it as a book in your learning library.</h2>
               <div className="mt-8">
                 <SearchBar onSearch={handleSearch} loading={saving} />
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-              <Card className="p-5 border-[#c29f60]/20 bg-[#12141a]/60">
+              <Card className="p-5 border-[var(--btn-secondary-border)] bg-[var(--input-bg)]">
                 <p className="text-sm text-[#a3835b]">Saved topics</p>
-                <p className="mt-2 text-4xl font-semibold text-[#f4ead6] font-serif">{topics.length}</p>
-                <p className="mt-2 text-sm text-[#dccfa6]/70">Every saved topic appears as a book on your shelf.</p>
+                <p className="mt-2 text-4xl font-semibold text-[var(--foreground)] font-serif">{topics.length}</p>
+                <p className="mt-2 text-sm text-[var(--library-copy-color)]">Every saved topic appears as a book on your shelf.</p>
               </Card>
-              <Card className="p-5 border-[#c29f60]/20 bg-[linear-gradient(135deg,#1c1e26,#15171e)]">
+              <Card className="p-5 border-[var(--btn-secondary-border)] bg-[var(--subtle-bg)]">
                 <p className="text-sm text-[#a3835b]">Search flow</p>
-                <p className="mt-2 text-2xl font-semibold text-[#f4ead6] font-serif">Search, save, and open the topic directly</p>
-                <p className="mt-2 text-sm text-[#dccfa6]/70">The topic is added to your shelf and opened immediately after materials are loaded.</p>
+                <p className="mt-2 text-2xl font-semibold text-[var(--foreground)] font-serif">Search, save, and open the topic directly</p>
+                <p className="mt-2 text-sm text-[var(--library-copy-color)]">The topic is added to your shelf and opened immediately after materials are loaded.</p>
               </Card>
             </div>
           </div>
@@ -113,9 +116,9 @@ export function LibraryPage() {
         ) : null}
 
         {loading ? (
-          <Card className="p-8 text-sm text-[#dccfa6]/70 border-[#c29f60]/10">Loading your shelf...</Card>
+          <Card className="p-8 text-sm text-[var(--library-copy-color)] border-[var(--btn-secondary-border)]">Loading your shelf...</Card>
         ) : (
-          <Bookshelf topics={topics} onDeleteTopic={(topic) => void handleDeleteTopic(topic)} deletingTopicId={deletingTopicId} />
+          <Bookshelf topics={filteredTopics} onDeleteTopic={(topic) => void handleDeleteTopic(topic)} deletingTopicId={deletingTopicId} />
         )}
       </div>
     </AppShell>

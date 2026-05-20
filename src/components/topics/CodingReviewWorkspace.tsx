@@ -51,116 +51,28 @@ const LANGUAGES: Array<{ value: SupportedLanguage; label: string; supported: boo
   { value: "java", label: "Java", supported: false },
 ];
 
-const FALLBACK_TASKS: MockTask[] = [
-  {
-    id: "task-dp-intro",
-    kind: "Task",
-    title: "Minimum coins to reach a target sum",
-    prompt: "Return the minimum number of coins needed to make a target sum. If impossible, return -1.",
-    starter: {
-      python: `def min_coins(coins, target):
-    dp = [0] * (target + 1)
-    for amount in range(1, target + 1):
-        best = 10 ** 9
-        for coin in coins:
-            if amount - coin >= 0:
-                best = min(best, dp[amount - coin] + 1)
-        dp[amount] = best
-    return dp[target]`,
-      typescript: `export function minCoins(coins: number[], target: number): number {
-  const dp = new Array(target + 1).fill(0);
-  for (let amount = 1; amount <= target; amount += 1) {
-    let best = Number.MAX_SAFE_INTEGER;
-    for (const coin of coins) {
-      if (amount - coin >= 0) {
-        best = Math.min(best, dp[amount - coin] + 1);
-      }
-    }
-    dp[amount] = best;
-  }
-  return dp[target];
+const TASK_STARTERS: Record<SupportedLanguage, string> = {
+  python: `def solve():
+    # Implement your solution here.
+    pass`,
+  typescript: `export function solve(): void {
+  // Implement your solution here.
 }`,
-      cpp: `int minCoins(vector<int>& coins, int target) {
-    vector<int> dp(target + 1, 0);
-    for (int amount = 1; amount <= target; amount++) {
-        int best = 1e9;
-        for (int coin : coins) {
-            if (amount - coin >= 0) {
-                best = min(best, dp[amount - coin] + 1);
-            }
-        }
-        dp[amount] = best;
-    }
-    return dp[target];
+  cpp: `void solve() {
+    // Implement your solution here.
 }`,
-      java: `public int minCoins(int[] coins, int target) {
-    return -1;
+  java: `public void solve() {
+    // Implement your solution here.
 }`,
-    },
-  },
-  {
-    id: "problem-grid-paths",
-    kind: "Problem",
-    title: "Count paths in a blocked grid",
-    prompt: "Count how many valid paths exist from the top-left to bottom-right corner when some cells are blocked.",
-    starter: {
-      python: `def count_paths(grid):
-    rows = len(grid)
-    cols = len(grid[0])
-    dp = [[0] * cols for _ in range(rows)]
-    dp[0][0] = 1
-    for r in range(rows):
-        for c in range(cols):
-            if grid[r][c] == 1:
-                continue
-            if r > 0:
-                dp[r][c] += dp[r - 1][c]
-            if c > 0:
-                dp[r][c] += dp[r][c - 1]
-    return dp[rows - 1][cols - 1]`,
-      typescript: `export function countPaths(grid: number[][]): number {
-  const rows = grid.length;
-  const cols = grid[0].length;
-  const dp = Array.from({ length: rows }, () => new Array(cols).fill(0));
-  dp[0][0] = 1;
-
-  for (let r = 0; r < rows; r += 1) {
-    for (let c = 0; c < cols; c += 1) {
-      if (grid[r][c] === 1) continue;
-      if (r > 0) dp[r][c] += dp[r - 1][c];
-      if (c > 0) dp[r][c] += dp[r][c - 1];
-    }
-  }
-
-  return dp[rows - 1][cols - 1];
-}`,
-      cpp: `int countPaths(vector<vector<int>>& grid) {
-    int rows = grid.size();
-    int cols = grid[0].size();
-    vector<vector<int>> dp(rows, vector<int>(cols, 0));
-    dp[0][0] = 1;
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-            if (grid[r][c] == 1) continue;
-            if (r > 0) dp[r][c] += dp[r - 1][c];
-            if (c > 0) dp[r][c] += dp[r][c - 1];
-        }
-    }
-    return dp[rows - 1][cols - 1];
-}`,
-      java: `public int countPaths(int[][] grid) {
-    return 0;
-}`,
-    },
-  },
-];
+};
 
 export function createCodingWorkspaceTasks(taskTitles: string[]): MockTask[] {
-  if (!taskTitles.length) return FALLBACK_TASKS;
-  return taskTitles.slice(0, 2).map((title, index) => ({
-    ...FALLBACK_TASKS[index % FALLBACK_TASKS.length],
+  return taskTitles.filter(Boolean).map((title, index) => ({
     id: `topic-task-${index}`,
+    kind: index % 2 === 0 ? "Task" : "Problem",
     title,
+    prompt: title,
+    starter: TASK_STARTERS,
   }));
 }
 
@@ -477,6 +389,18 @@ export function CodingReviewWorkspace({ topicId, tasks, initialTaskId = null }: 
   const reviewCount = review
     ? CATEGORY_ORDER.reduce((count, category) => count + review.findings[category].length, 0)
     : 0;
+
+  if (!selectedTask) {
+    return (
+      <Card className="rounded-[24px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#171920,#13151b)] p-6">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#b89a68]">Task workspace</p>
+        <h3 className="mt-1.5 text-xl font-semibold text-[#f4ead6]">No coding tasks available</h3>
+        <p className="mt-2 text-sm leading-6 text-[#dccfa6]/72">
+          Generated or saved topic tasks will appear here when they are available.
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-3">
