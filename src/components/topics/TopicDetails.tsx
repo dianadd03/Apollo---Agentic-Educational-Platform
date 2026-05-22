@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createCodingWorkspaceTasks } from "@/components/topics/CodingReviewWorkspace";
 import { ProblemsSection } from "@/components/problems/ProblemsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,16 +24,16 @@ type TopicDetailsProps = {
 
 function FutureSection({ title, items, emptyLabel }: { title: string; items: string[]; emptyLabel: string }) {
   return (
-    <Card className="border-[#c29f60]/20 [background:var(--topic-panel-bg)] p-5">
+    <Card className="p-5 border-[#c29f60]/20 bg-[linear-gradient(135deg,#1c1e26,#15171e)]">
       <h3 className="section-title">{title}</h3>
       {items.length ? (
-        <ul className="mt-4 space-y-3 text-sm text-[var(--topic-title-color)]">
+        <ul className="mt-4 space-y-3 text-sm text-[#f4ead6]">
           {items.map((item) => (
-            <li key={item} className="rounded-2xl border border-[#c29f60]/10 [background:var(--topic-card-bg)] px-4 py-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]">{item}</li>
+            <li key={item} className="rounded-2xl border border-[#c29f60]/10 bg-[#12141a]/60 px-4 py-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)]">{item}</li>
           ))}
         </ul>
       ) : (
-        <p className="mt-4 text-sm leading-7 text-[var(--topic-copy-color)]">{emptyLabel}</p>
+        <p className="mt-4 text-sm leading-7 text-[#dccfa6]/70">{emptyLabel}</p>
       )}
     </Card>
   );
@@ -64,8 +63,6 @@ function sourceBadgeLabel(item: SearchResult) {
       return "Highly liked";
     case "db_internal":
       return "Database result";
-    case "db_material":
-      return "Database material";
     case "internal":
       return "Trusted internal material";
     default:
@@ -82,7 +79,6 @@ function sourceBadgeTone(item: SearchResult): "success" | "warning" | "info" | "
       return "success";
     case "promoted":
     case "db_internal":
-    case "db_material":
       return "info";
     case "web":
       return "warning";
@@ -106,7 +102,7 @@ function parseReviewData(item: SearchResult): ReviewData | null {
 }
 
 function scoreTone(value?: number): string {
-  if (typeof value !== "number") return "[background:var(--topic-elevated-bg)] text-[var(--topic-copy-color)]";
+  if (typeof value !== "number") return "bg-[#1f2430] text-[#dccfa6]";
   if (value >= 80) return "bg-emerald-950/70 text-emerald-200";
   if (value >= 60) return "bg-amber-950/70 text-amber-200";
   return "bg-rose-950/70 text-rose-200";
@@ -195,12 +191,12 @@ function MaterialCard({ item }: { item: SearchResult }) {
       href={href || "#"}
       target="_blank"
       rel="noreferrer"
-      className="group block rounded-[22px] border border-[#c29f60]/14 [background:var(--topic-card-bg)] px-4 py-4 transition hover:[background:var(--topic-card-hover-bg)]"
+      className="block rounded-[22px] border border-[#c29f60]/14 bg-[linear-gradient(180deg,#1b1d24,#171920)] px-4 py-4 transition hover:bg-[linear-gradient(180deg,#22252d,#1a1c23)] group"
     >
       <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-base font-semibold leading-6 text-[var(--topic-title-color)] transition-colors group-hover:text-[#c29f60]">{item.title}</p>
+            <p className="text-base font-semibold leading-6 text-[#f4ead6] transition-colors group-hover:text-[#c29f60]">{item.title}</p>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[#a3835b]">
             <Badge tone={sourceBadgeTone(item)} className="border-[#c29f60]/10 px-2 py-0.5 text-[10px]">
@@ -211,7 +207,7 @@ function MaterialCard({ item }: { item: SearchResult }) {
             <span className="h-1 w-1 rounded-full bg-[#c29f60]/40" />
             <span>{sourceName}</span>
           </div>
-          {snippetText ? <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--topic-copy-color)] line-clamp-2">{snippetText}</p> : null}
+          {snippetText ? <p className="mt-3 max-w-3xl text-sm leading-6 text-[#dccfa6]/74 line-clamp-2">{snippetText}</p> : null}
         </div>
 
         <div className="flex xl:flex-none xl:justify-end">
@@ -231,7 +227,7 @@ function MaterialCard({ item }: { item: SearchResult }) {
               <span className="text-[10px] font-semibold uppercase tracking-[0.08em]">E {typeof review?.ease_of_understanding_score === "number" ? review.ease_of_understanding_score : "N/A"}</span>
             </div>
             {typeof item.like_count === "number" ? (
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-[var(--topic-copy-color)]">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-[#dccfa6]/68">
                 <Heart className="h-3.5 w-3.5" />
                 {item.like_count}
               </span>
@@ -253,42 +249,46 @@ function GeneratedTaskCard({
   onOpenCodeReview: () => void;
 }) {
   return (
-    <Card className="rounded-[24px] border border-[#c29f60]/12 [background:var(--topic-card-bg)] p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Problem {index + 1}</p>
-          <h4 className="mt-2 text-xl font-semibold text-[var(--topic-title-color)]">{task.title}</h4>
+    <Card className="rounded-[20px] border border-[#c29f60]/14 bg-[#12141a]/70 p-0">
+      <div className="flex flex-col gap-4 border-b border-[#c29f60]/10 px-5 py-4 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#b89a68]">Problem {index + 1}</p>
+          <h4 className="mt-1.5 text-2xl font-semibold leading-8 text-[#f4ead6]">{task.title}</h4>
         </div>
-        <Badge tone="info">Generated</Badge>
+        <Button
+          variant="secondary"
+          className="shrink-0 rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d]"
+          onClick={onOpenCodeReview}
+        >
+          Open code review
+        </Button>
       </div>
-      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[var(--topic-copy-color)]">{task.task}</p>
 
-      <div className="mt-5 space-y-4">
-        <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Examples</p>
-        {task.examples.map((example, exampleIndex) => (
-          <div key={`${task.title}-${exampleIndex}`} className="rounded-[20px] border border-[#c29f60]/10 [background:var(--topic-elevated-bg)] p-4">
-            <p className="text-sm font-semibold text-[var(--topic-title-color)]">Example {exampleIndex + 1}</p>
-            <div className="mt-3 grid gap-3 lg:grid-cols-2">
-              <div>
-                <p className="mb-1.5 text-[11px] uppercase tracking-[0.18em] text-[#a3835b]">Input</p>
-                <pre className="min-h-[56px] whitespace-pre-wrap rounded-[14px] border border-[#c29f60]/10 [background:var(--topic-code-bg)] p-3 text-xs leading-5 text-[var(--topic-title-color)]">{example.input}</pre>
+      <div className="px-5 py-4">
+        <div className="rounded-[16px] border border-[#c29f60]/10 bg-[#171920] p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#b89a68]">Problem statement</p>
+          <p className="mt-2 whitespace-pre-wrap text-base leading-7 text-[#f4ead6]">{task.task}</p>
+        </div>
+
+        <div className="mt-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#b89a68]">Examples</p>
+          <div className="mt-2 grid gap-3">
+            {task.examples.map((example, exampleIndex) => (
+              <div key={`${task.title}-${exampleIndex}`} className="grid gap-3 rounded-[16px] border border-[#c29f60]/10 bg-[#101218] p-3 lg:grid-cols-[88px_minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch">
+                <div className="flex items-center text-sm font-semibold text-[#f4ead6]">#{exampleIndex + 1}</div>
+                <div>
+                  <p className="mb-1 text-[11px] uppercase tracking-[0.16em] text-[#a3835b]">Input</p>
+                  <pre className="min-h-[52px] whitespace-pre-wrap rounded-[12px] border border-[#c29f60]/10 bg-[#0b0d12] p-3 text-xs leading-5 text-[#f4ead6]">{example.input}</pre>
+                </div>
+                <div>
+                  <p className="mb-1 text-[11px] uppercase tracking-[0.16em] text-[#a3835b]">Expected output</p>
+                  <pre className="min-h-[52px] whitespace-pre-wrap rounded-[12px] border border-[#c29f60]/10 bg-[#0b0d12] p-3 text-xs leading-5 text-[#f4ead6]">{example.output}</pre>
+                </div>
               </div>
-              <div>
-                <p className="mb-1.5 text-[11px] uppercase tracking-[0.18em] text-[#a3835b]">Output</p>
-                <pre className="min-h-[56px] whitespace-pre-wrap rounded-[14px] border border-[#c29f60]/10 [background:var(--topic-code-bg)] p-3 text-xs leading-5 text-[var(--topic-title-color)]">{example.output}</pre>
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
-
-      <Button
-        variant="secondary"
-        className="mt-5 rounded-full border-[#c29f60]/18 bg-[var(--btn-secondary-bg)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover-bg)] hover:text-[var(--btn-secondary-hover-text)]"
-        onClick={onOpenCodeReview}
-      >
-        Open code review
-      </Button>
     </Card>
   );
 }
@@ -298,11 +298,10 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState<(typeof CONTENT_TABS)[number]>("Materials");
   const [selectedLevel, setSelectedLevel] = useState<(typeof MATERIAL_LEVELS)[number]>("beginner");
-  const [generatedTasks, setGeneratedTasks] = useState<GeneratedFoundationalTask[]>([]);
-  const [taskTopic, setTaskTopic] = useState<string | null>(null);
+  const [generatedTasks, setGeneratedTasks] = useState<GeneratedFoundationalTask[]>(topic.coding_tasks);
+  const [taskTopic, setTaskTopic] = useState<string | null>(topic.coding_tasks.length ? topic.title : null);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksError, setTasksError] = useState<string | null>(null);
-  const codingTasks = useMemo(() => createCodingWorkspaceTasks(topic.coding_tasks), [topic.coding_tasks]);
   const sortedMaterials = useMemo(() => [...materials].sort((left, right) => {
     const leftReview = parseReviewData(left);
     const rightReview = parseReviewData(right);
@@ -329,17 +328,17 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
   }, [topic.id, materials.length, selectedLevel, activeTab]);
 
   useEffect(() => {
-    setGeneratedTasks([]);
-    setTaskTopic(null);
+    setGeneratedTasks(topic.coding_tasks);
+    setTaskTopic(topic.coding_tasks.length ? topic.title : null);
     setTasksError(null);
     setTasksLoading(false);
-  }, [topic.id]);
+  }, [topic.coding_tasks, topic.id, topic.title]);
 
-  const handleGenerateTasks = async () => {
+  const handleGenerateTasks = async (forceRegenerate = false) => {
     setTasksLoading(true);
     setTasksError(null);
     try {
-      const response = await api.generateFoundationalTasks(topic.title);
+      const response = await api.generateTopicFoundationalTasks(topic.id, forceRegenerate);
       setGeneratedTasks(response.foundational_tasks);
       setTaskTopic(response.topic);
     } catch (err) {
@@ -361,8 +360,8 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
                 onClick={() => setSelectedLevel(level)}
                 className={`relative min-w-[160px] rounded-t-[22px] border-[2px] border-b-0 px-5 py-3 text-left text-lg font-semibold capitalize transition ${
                   level === selectedLevel
-                    ? "z-10 -mb-[2px] border-[#c29f60]/45 [background:var(--topic-active-tab-bg)] text-[var(--topic-title-color)] shadow-[0_-4px_14px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.06)]"
-                    : "border-[#c29f60]/14 [background:var(--topic-inactive-tab-bg)] text-[var(--topic-copy-color)] hover:[background:var(--topic-inactive-tab-hover-bg)] hover:text-[var(--topic-title-color)]"
+                    ? "z-10 -mb-[2px] border-[#c29f60]/45 bg-[linear-gradient(180deg,#2b241b,#1b1d24)] text-[#f4ead6] shadow-[0_-4px_14px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.06)]"
+                    : "border-[#c29f60]/14 bg-[linear-gradient(180deg,#191b22,#13151b)] text-[#dccfa6]/72 hover:bg-[linear-gradient(180deg,#21242d,#171920)] hover:text-[#f4ead6]"
                 }`}
               >
                 {level}
@@ -371,8 +370,8 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
           </div>
         </div>
 
-        <div className="rounded-[0_28px_28px_28px] border-[3px] border-[#c29f60]/16 [background:var(--topic-surface-bg)] p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#c29f60]/10 pb-4 text-sm text-[var(--topic-copy-color)]">
+        <div className="rounded-[0_28px_28px_28px] border-[3px] border-[#c29f60]/16 bg-[linear-gradient(180deg,#1b1d24,#15171e)] p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#c29f60]/10 pb-4 text-sm text-[#dccfa6]/80">
             <span className="font-medium">
               {selectedLevel.charAt(0).toUpperCase() + selectedLevel.slice(1)} materials
             </span>
@@ -390,7 +389,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
               ))}
             </div>
           ) : (
-            <div className="rounded-[28px] border border-[#c29f60]/10 [background:var(--topic-card-bg)] px-6 py-10 text-center text-sm text-[var(--topic-copy-color)]">
+            <div className="rounded-[28px] border border-[#c29f60]/10 bg-[#12141a]/60 px-6 py-10 text-center text-sm text-[#dccfa6]/72">
               No reviewed web materials are available for the {selectedLevel} level yet.
             </div>
           )}
@@ -399,7 +398,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t-2 border-[#c29f60]/10 pt-4">
               <Button
                 variant="secondary"
-                className="rounded-full border-[#c29f60]/18 bg-[var(--btn-secondary-bg)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover-bg)] hover:text-[var(--btn-secondary-hover-text)]"
+                className="rounded-full border-[#c29f60]/18 bg-[#12141a]/60 text-[#f4ead6] hover:bg-[#1c1e26]"
                 disabled={safePage === 1}
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
               >
@@ -416,7 +415,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
                     className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition ${
                       page === safePage
                         ? "border-[#c29f60] bg-[#c29f60] text-[#12141a]"
-                        : "border-[#c29f60]/18 [background:var(--topic-card-bg)] text-[var(--topic-title-color)] hover:[background:var(--topic-card-hover-bg)]"
+                        : "border-[#c29f60]/18 bg-[#12141a]/60 text-[#f4ead6] hover:bg-[#1c1e26]"
                     }`}
                   >
                     {page}
@@ -425,7 +424,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
               </div>
               <Button
                 variant="secondary"
-                className="rounded-full border-[#c29f60]/18 bg-[var(--btn-secondary-bg)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover-bg)] hover:text-[var(--btn-secondary-hover-text)]"
+                className="rounded-full border-[#c29f60]/18 bg-[#12141a]/60 text-[#f4ead6] hover:bg-[#1c1e26]"
                 disabled={safePage === totalPages}
                 onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
               >
@@ -447,22 +446,22 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
     ),
     "Coding Tasks": (
       <div className="space-y-5">
-        <Card className="rounded-[30px] border-[#c29f60]/14 [background:var(--topic-panel-bg)] p-5 md:p-6">
+        <Card className="rounded-[30px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#1a1d24,#14161d)] p-5 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Foundational task agent</p>
-              <h3 className="mt-2 text-3xl font-semibold text-[var(--topic-title-color)]">Generate focused coding problems</h3>
+              <h3 className="mt-2 text-3xl font-semibold text-[#f4ead6]">Generate focused coding problems</h3>
             </div>
             <Button
               variant="secondary"
-              className="self-start rounded-full border-[#c29f60]/18 bg-[var(--btn-secondary-bg)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover-bg)] hover:text-[var(--btn-secondary-hover-text)] md:self-auto"
+              className="self-start rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d] md:self-auto"
               disabled={tasksLoading}
-              onClick={() => void handleGenerateTasks()}
+              onClick={() => void handleGenerateTasks(generatedTasks.length > 0)}
             >
               {tasksLoading ? "Generating tasks..." : generatedTasks.length ? "Regenerate tasks" : "Generate Foundational Tasks"}
             </Button>
           </div>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--topic-copy-color)]">
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[#dccfa6]/74">
             Create programming problems for {topic.title}, with examples formatted for quick practice.
           </p>
         </Card>
@@ -475,57 +474,24 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
 
         {generatedTasks.length ? (
           <div className="space-y-4">
-            {taskTopic ? <p className="text-sm text-[var(--topic-copy-color)]">Generated for {taskTopic}</p> : null}
+            {taskTopic ? <p className="text-sm text-[#dccfa6]/70">Generated for {taskTopic}</p> : null}
             {generatedTasks.map((task, index) => (
               <GeneratedTaskCard
                 key={`${task.title}-${index}`}
                 task={task}
                 index={index}
                 onOpenCodeReview={() =>
-                  navigate(`/topics/${topic.id}/coding-review`, {
-                    state: {
-                      topic,
-                    },
-                  })
+                  navigate(`/topics/${topic.id}/coding-review?task=${encodeURIComponent(task.id ?? `topic-task-${index}`)}`)
                 }
               />
             ))}
           </div>
         ) : (
-          <Card className="rounded-[24px] border border-[#c29f60]/12 [background:var(--topic-card-bg)] p-6 text-sm leading-7 text-[var(--topic-copy-color)]">
+          <Card className="rounded-[24px] border border-[#c29f60]/12 bg-[#12141a]/60 p-6 text-sm leading-7 text-[#dccfa6]/72">
             No generated foundational tasks yet. Use the button above when you are ready to create practice problems for this topic.
           </Card>
         )}
 
-        {/* {codingTasks.length ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {codingTasks.map((task) => (
-              <Card key={task.id} className="rounded-[24px] border border-[#c29f60]/12 [background:var(--topic-card-bg)] p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">{task.kind}</p>
-                    <h4 className="mt-2 text-xl font-semibold text-[var(--topic-title-color)]">{task.title}</h4>
-                  </div>
-                  <Badge tone="warning">Full page</Badge>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-[var(--topic-copy-color)]">{task.prompt}</p>
-                <Button
-                  variant="secondary"
-                  className="mt-4 rounded-full border-[#c29f60]/18 bg-[var(--btn-secondary-bg)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover-bg)] hover:text-[var(--btn-secondary-hover-text)]"
-                  onClick={() =>
-                    navigate(`/topics/${topic.id}/coding-review?task=${task.id}`, {
-                      state: {
-                        topic,
-                      },
-                    })
-                  }
-                >
-                  Open code review
-                </Button>
-              </Card>
-            ))}
-          </div>
-        ) : null} */}
       </div>
     ),
     Roadmap: <FutureSection title="Roadmap" items={topic.roadmap} emptyLabel="Roadmap steps will appear here once backend orchestration is connected." />,
@@ -533,13 +499,13 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <Card className="rounded-[40px] border-[3px] border-[#c29f60]/14 [background:var(--topic-surface-bg)] p-5 md:p-6">
+      <Card className="rounded-[40px] border-[3px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#1b1d24,#15171e)] p-5 md:p-6">
         <div className="space-y-5">
           {tabContent[activeTab]}
         </div>
       </Card>
 
-      <Card className="self-start overflow-hidden rounded-[34px] border-[3px] border-[#c29f60]/14 [background:var(--topic-panel-bg)] p-0">
+      <Card className="self-start overflow-hidden rounded-[34px] border-[3px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#1c1e26,#15171e)] p-0">
         <div>
           {CONTENT_TABS.map((tab, index) => (
             <div
@@ -551,8 +517,8 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
                 onClick={() => setActiveTab(tab)}
                 className={`w-full px-5 py-5 text-left text-xl font-semibold transition ${
                   tab === activeTab
-                    ? "[background:var(--topic-active-bg)] text-[var(--topic-title-color)]"
-                    : "text-[var(--topic-copy-color)] hover:[background:var(--topic-card-hover-bg)] hover:text-[var(--topic-title-color)]"
+                    ? "bg-[#2b221d] text-[#f4ead6]"
+                    : "text-[#dccfa6]/82 hover:bg-[#1c1e26] hover:text-[#f4ead6]"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
