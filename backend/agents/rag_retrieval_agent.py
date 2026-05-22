@@ -3,13 +3,12 @@ from __future__ import annotations
 import logging
 from decimal import Decimal
 from collections import defaultdict
-from typing import Any
+from typing import Any, Protocol
 from urllib.parse import urlparse, urlunparse
 
 from sqlalchemy import Select, String, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from backend.agents.search_agent import SearchAgent
 from backend.db.models import (
     Material,
     MaterialSourceType,
@@ -76,10 +75,15 @@ SOURCE_TYPE_BONUS = {
 }
 
 
+class ReviewSearchLike(Protocol):
+    async def search_topic(self, topic: str, max_results: int) -> SearchMaterialsResponse:
+        ...
+
+
 class RagRetrievalAgent:
-    def __init__(self, db: Session, search_agent: SearchAgent) -> None:
+    def __init__(self, db: Session, review_search: ReviewSearchLike) -> None:
         self._db = db
-        self._search_agent = search_agent
+        self._review_search = review_search
 
     async def search(self, topic: str, max_results: int = 28) -> SearchMaterialsResponse:
         limit = min(max(max_results, 1), 28)
@@ -189,23 +193,25 @@ class RagRetrievalAgent:
         total_internal = sum(len(items) for items in internal_by_level.values())
         missing_levels = [level for level in LEVELS if len(internal_by_level[level]) < MIN_PER_LEVEL]
 
-        for level in missing_levels:
-            missing = MIN_PER_LEVEL - len(internal_by_level[level])
-            query = f"{topic} {LEVEL_WEB_QUERY_SUFFIX[level]}"
-            response = await self._search_agent.search_topic(topic=query, max_results=missing)
-            reviewed = self._review_web_candidates(query, response.results)
-            web_candidates.extend(self._mark_web_candidate(item, topic, level) for item in reviewed)
+        if missing_levels:
+            missing_total = sum(MIN_PER_LEVEL - len(internal_by_level[level]) for level in missing_levels)
+            response = await self._review_search.search_topic(topic=topic, max_results=min(max_results, missing_total))
+            reviewed = self._review_web_candidates(topic, response.results)
+            for candidate in reviewed:
+                candidate_level = self._calibrated_candidate_level(candidate, None)
+                target_level = candidate_level if candidate_level in missing_levels else None
+                web_candidates.append(self._mark_web_candidate(candidate, topic, target_level))
 
         if total_internal < MIN_INTERNAL_TOTAL and not missing_levels:
             remaining = max(max_results - total_internal, 1)
-            response = await self._search_agent.search_topic(topic=topic, max_results=remaining)
+            response = await self._review_search.search_topic(topic=topic, max_results=remaining)
             reviewed = self._review_web_candidates(topic, response.results)
             web_candidates.extend(self._mark_web_candidate(item, topic, None) for item in reviewed)
 
         return web_candidates
 
     def _review_web_candidates(self, query: str, candidates: list[CandidateMaterial]) -> list[CandidateMaterial]:
-        reviewer = getattr(self._search_agent, "_review_candidates", None)
+        reviewer = getattr(self._review_search, "_review_candidates", None)
         if reviewer is None:
             return candidates
         try:
@@ -545,7 +551,7 @@ class RagRetrievalAgent:
         return declared
 
     def _material_source_of_result(self, material: Material) -> str:
-        return "internal" if material.source_type in INTERNAL_SOURCE_TYPES else "web"
+        return "internal" if material.source_type in INTERNAL_SOURCE_TYPES else "db_material"
 
     def _level_rank(self, level: str) -> int:
         try:

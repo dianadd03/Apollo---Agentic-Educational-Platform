@@ -31,6 +31,259 @@
   --border: 225 15% 18%;
   --input: 225 15% 18%;
   --ring: 40 43% 57%;
+
+  /* Custom theme properties */
+  /* Body */
+  --body-bg-gradient-start: #12141a;
+  --body-bg-gradient-end: #0d0f13;
+  --body-bg-radial-1: rgba(194, 159, 96, 0.08);
+  --body-bg-radial-2: rgba(78, 35, 46, 0.15);
+
+  /* Panels */
+  --glass-bg: rgba(22, 24, 32, 0.8);
+  --glass-border: rgba(194, 159, 96, 0.1);
+  --glass-shadow: 0 26px 70px rgba(0, 0, 0, 0.5);
+  
+  --subtle-bg: rgba(21, 23, 30, 0.95);
+  --subtle-border: rgba(194, 159, 96, 0.1);
+  --subtle-shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
+
+  --section-title-color: #f4ead6;
+  --library-copy-color: #dccfa6;
+
+  /* Badges */
+  --badge-default-bg: #1c1e26;
+  --badge-default-text: #dccfa6;
+  --badge-default-border: rgba(194, 159, 96, 0.2);
+  
+  --badge-success-bg: #121e14;
+  --badge-success-text: #8fa68a;
+  --badge-success-border: rgba(36, 59, 41, 0.4);
+
+  --badge-warning-bg: #2c221d;
+  --badge-warning-text: #c29f60;
+  --badge-warning-border: rgba(78, 35, 46, 0.4);
+
+  --badge-danger-bg: #2a0e12;
+  --badge-danger-text: #c26060;
+  --badge-danger-border: rgba(78, 28, 36, 0.4);
+
+  --badge-info-bg: #1c2e4a;
+  --badge-info-text: #8fa6c2;
+  --badge-info-border: rgba(44, 62, 87, 0.4);
+
+  /* Buttons */
+  --btn-secondary-bg: #161820;
+  --btn-secondary-border: rgba(194, 159, 96, 0.2);
+  --btn-secondary-text: #dccfa6;
+  --btn-secondary-hover-bg: #1c1e26;
+  --btn-secondary-hover-text: #f4ead6;
+
+  --btn-ghost-text: rgba(220, 207, 166, 0.8);
+  --btn-ghost-hover-bg: rgba(28, 30, 38, 0.7);
+  --btn-ghost-hover-text: #f4ead6;
+
+  --btn-danger-bg: #4e1c24;
+  --btn-danger-border: #2a0e12;
+  --btn-danger-text: #dccfa6;
+  --btn-danger-hover-bg: #6c2833;
+
+  /* Input */
+  --input-bg: rgba(18, 20, 26, 0.8);
+  --input-text: #f4ead6;
+  --input-placeholder: rgba(220, 207, 166, 0.5);
+
+  /* Sidebar */
+  --sidebar-active-bg: #2c221d;
+  --sidebar-active-border: rgba(194, 159, 96, 0.2);
+  --sidebar-active-text: #f4ead6;
+  --sidebar-hover-bg: #1c1e26;
+
+  /* Code Review / Editor Workspace */
+  --editor-bg: #111318;
+  --editor-text: #f4ead6;
+  --editor-caret: #f4ead6;
+  --editor-gutter-bg: #111318;
+  --editor-gutter-text: #c29f60;
+  --editor-tab-active-bg: #1c1e26;
+  --editor-tab-inactive-bg: #111318;
+  --editor-tab-active-text: #f4ead6;
+  --editor-tab-inactive-text: rgba(220, 207, 166, 0.6);
+
+  /* Modal Overlays & Popups */
+  --modal-overlay-bg: rgba(13, 15, 19, 0.8);
+  --modal-bg: #161820;
+  --modal-border: rgba(194, 159, 96, 0.3);
+  --modal-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+
+  /* Tables */
+  --table-header-bg: #12141a;
+  --table-row-hover-bg: rgba(28, 30, 38, 0.6);
+  --table-header-text: #a3835b;
+  --table-row-border: rgba(194, 159, 96, 0.1);
+
+  /* Topic workbench */
+  --topic-panel-bg: linear-gradient(180deg, #1c1e26, #15171e);
+  --topic-surface-bg: linear-gradient(180deg, #1b1d24, #15171e);
+  --topic-card-bg: rgba(18, 20, 26, 0.6);
+  --topic-card-hover-bg: #1c1e26;
+  --topic-elevated-bg: #171920;
+  --topic-code-bg: #0f1117;
+  --topic-active-bg: #2b221d;
+  --topic-active-tab-bg: linear-gradient(180deg, #2b241b, #1b1d24);
+  --topic-inactive-tab-bg: linear-gradient(180deg, #191b22, #13151b);
+  --topic-inactive-tab-hover-bg: linear-gradient(180deg, #21242d, #171920);
+  --topic-title-color: #f4ead6;
+  --topic-heading-color: #f7f0df;
+  --topic-copy-color: #dccfa6;
+  --topic-pill-text: #ecdfbf;
+}
+
+.light {
+  /* Light Mode Variables */
+  /* Warm Parchment/Cream Background */
+  --background: 35 25% 94%;
+  /* Dark Charcoal Foreground */
+  --foreground: 225 15% 12%;
+  
+  /* Off-white Card */
+  --card: 35 20% 97%;
+  --card-foreground: 225 15% 12%;
+  
+  /* Vintage Gold Primary */
+  --primary: 38 43% 45%;
+  --primary-foreground: 35 25% 97%;
+  
+  /* Deep Burgundy Secondary */
+  --secondary: 345 38% 30%;
+  --secondary-foreground: 35 25% 97%;
+  
+  /* Warm Muted */
+  --muted: 35 15% 88%;
+  --muted-foreground: 225 10% 40%;
+  
+  /* Forest Accent */
+  --accent: 154 22% 35%;
+  --accent-foreground: 35 25% 97%;
+  
+  /* Light Antique Border */
+  --border: 35 15% 82%;
+  --input: 35 15% 85%;
+  --ring: 38 43% 45%;
+
+  /* Custom theme properties */
+  /* Body */
+  --body-bg-gradient-start: #faf8f5;
+  --body-bg-gradient-end: #f0ede4;
+  --body-bg-radial-1: rgba(194, 159, 96, 0.12);
+  --body-bg-radial-2: rgba(78, 35, 46, 0.05);
+
+  /* Panels */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(194, 159, 96, 0.22);
+  --glass-shadow: 0 18px 44px rgba(84, 67, 42, 0.14), 0 4px 14px rgba(84, 67, 42, 0.08);
+  
+  --subtle-bg: rgba(248, 246, 239, 0.95);
+  --subtle-border: rgba(194, 159, 96, 0.18);
+  --subtle-shadow: 0 16px 38px rgba(84, 67, 42, 0.12), 0 3px 10px rgba(84, 67, 42, 0.06);
+
+  --section-title-color: #3c3224;
+  --library-copy-color: #5c4e3b;
+
+  /* Badges */
+  --badge-default-bg: #eae6db;
+  --badge-default-text: #5c4e3b;
+  --badge-default-border: rgba(194, 159, 96, 0.3);
+  
+  --badge-success-bg: #edf5ed;
+  --badge-success-text: #3b6635;
+  --badge-success-border: rgba(59, 102, 53, 0.2);
+
+  --badge-warning-bg: #faf3e6;
+  --badge-warning-text: #8c672b;
+  --badge-warning-border: rgba(194, 159, 96, 0.4);
+
+  --badge-danger-bg: #fdf2f2;
+  --badge-danger-text: #a83232;
+  --badge-danger-border: rgba(168, 50, 50, 0.2);
+
+  --badge-info-bg: #eef2f6;
+  --badge-info-text: #2b5c8f;
+  --badge-info-border: rgba(43, 92, 143, 0.2);
+
+  /* Buttons */
+  --btn-secondary-bg: #f5f3eb;
+  --btn-secondary-border: rgba(194, 159, 96, 0.35);
+  --btn-secondary-text: #5c4e3b;
+  --btn-secondary-hover-bg: #eae6db;
+  --btn-secondary-hover-text: #3c3224;
+
+  --btn-ghost-text: rgba(92, 78, 59, 0.8);
+  --btn-ghost-hover-bg: rgba(194, 159, 96, 0.15);
+  --btn-ghost-hover-text: #3c3224;
+
+  --btn-danger-bg: #fdf2f2;
+  --btn-danger-border: rgba(168, 50, 50, 0.25);
+  --btn-danger-text: #a83232;
+  --btn-danger-hover-bg: #fde8e8;
+
+  /* Input */
+  --input-bg: rgba(255, 255, 255, 0.9);
+  --input-text: #2e2a24;
+  --input-placeholder: rgba(92, 78, 59, 0.5);
+
+  /* Sidebar */
+  --sidebar-active-bg: #eae6db;
+  --sidebar-active-border: rgba(194, 159, 96, 0.4);
+  --sidebar-active-text: #3c3224;
+  --sidebar-hover-bg: rgba(194, 159, 96, 0.12);
+
+  /* Code Review / Editor Workspace */
+  --editor-bg: #fdfcf7;
+  --editor-text: #2e2a24;
+  --editor-caret: #2e2a24;
+  --editor-gutter-bg: #f8f6f0;
+  --editor-gutter-text: #8c672b;
+  --editor-tab-active-bg: #eae6db;
+  --editor-tab-inactive-bg: #f3f0e7;
+  --editor-tab-active-text: #3c3224;
+  --editor-tab-inactive-text: rgba(92, 78, 59, 0.6);
+
+  /* Modal Overlays & Popups */
+  --modal-overlay-bg: rgba(60, 50, 36, 0.4);
+  --modal-bg: #fdfbf7;
+  --modal-border: rgba(194, 159, 96, 0.5);
+  --modal-shadow: 0 20px 50px rgba(60, 50, 36, 0.15);
+
+  /* Tables */
+  --table-header-bg: #f3f0e7;
+  --table-row-hover-bg: rgba(194, 159, 96, 0.08);
+  --table-header-text: #8c672b;
+  --table-row-border: rgba(194, 159, 96, 0.2);
+
+  /* Topic workbench */
+  --topic-panel-bg: #fffdf8;
+  --topic-surface-bg: #f7f3ea;
+  --topic-card-bg: rgba(255, 255, 255, 0.86);
+  --topic-card-hover-bg: #f1eadc;
+  --topic-elevated-bg: #fbf8f1;
+  --topic-code-bg: #f3efe5;
+  --topic-active-bg: #e8deca;
+  --topic-active-tab-bg: linear-gradient(180deg, #efe5d2, #fffdf8);
+  --topic-inactive-tab-bg: linear-gradient(180deg, #f8f3ea, #eee5d7);
+  --topic-inactive-tab-hover-bg: linear-gradient(180deg, #f1e6d5, #faf7f0);
+  --topic-title-color: #3c3224;
+  --topic-heading-color: #2e2a24;
+  --topic-copy-color: #5c4e3b;
+  --topic-pill-text: #5c4e3b;
+
+  --bookshelf-plank-bg: linear-gradient(180deg, #eadfca 0%, #d8c8aa 100%);
+  --bookshelf-plank-border: #c1aa80;
+  --bookshelf-plank-shadow: 0 22px 44px rgba(100, 76, 42, 0.22), 0 5px 12px rgba(100, 76, 42, 0.12);
+  --bookshelf-plank-glow: rgba(100, 76, 42, 0.2);
+  --bookshelf-rail-bg: linear-gradient(180deg, #d0b88d, #a98755);
+  --bookshelf-rail-border: #b2905e;
+  --bookshelf-rail-shadow: 0 9px 18px rgba(100, 76, 42, 0.22);
 }
 
 @layer base {
@@ -42,9 +295,9 @@
     @apply min-h-screen bg-background text-foreground antialiased;
     font-family: "Manrope", "Segoe UI", sans-serif;
     background-image:
-      radial-gradient(circle at top left, rgba(194, 159, 96, 0.08), transparent 30%),
-      radial-gradient(circle at bottom right, rgba(78, 35, 46, 0.15), transparent 40%),
-      linear-gradient(180deg, #12141a 0%, #0d0f13 100%);
+      radial-gradient(circle at top left, var(--body-bg-radial-1), transparent 30%),
+      radial-gradient(circle at bottom right, var(--body-bg-radial-2), transparent 40%),
+      linear-gradient(180deg, var(--body-bg-gradient-start) 0%, var(--body-bg-gradient-end) 100%);
   }
 
   h1,
@@ -83,35 +336,47 @@
   }
 
   .glass-panel {
-    @apply rounded-[32px] border border-[#c29f60]/10 bg-[#161820]/80 shadow-[0_26px_70px_rgba(0,0,0,0.5)] backdrop-blur-md;
+    background-color: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    @apply rounded-[32px] backdrop-blur-md;
   }
 
   .subtle-panel {
-    @apply rounded-[28px] border border-[#c29f60]/10 bg-[#15171e]/95 shadow-[0_18px_48px_rgba(0,0,0,0.4)];
+    background-color: var(--subtle-bg);
+    border: 1px solid var(--subtle-border);
+    box-shadow: var(--subtle-shadow);
+    @apply rounded-[28px];
   }
 
   .section-title {
-    @apply text-2xl font-semibold tracking-tight text-[#f4ead6];
+    color: var(--section-title-color);
+    @apply text-2xl font-semibold tracking-tight;
   }
 
   .library-copy {
-    @apply text-sm leading-7 text-[#dccfa6];
+    color: var(--library-copy-color);
+    @apply text-sm leading-7;
   }
 
   .bookshelf-plank {
-    @apply relative rounded-[16px] border border-[#3b281b] bg-[linear-gradient(180deg,#1c120c_0%,#0e0a07_100%)] px-5 py-6 shadow-[0_24px_50px_rgba(0,0,0,0.6)];
+    background: var(--bookshelf-plank-bg, linear-gradient(180deg,#1c120c 0%,#0e0a07 100%));
+    border-color: var(--bookshelf-plank-border, #3b281b);
+    box-shadow: var(--bookshelf-plank-shadow, 0 24px 50px rgba(0,0,0,0.6));
+    @apply relative rounded-[16px] border px-5 py-6;
   }
 
   .bookshelf-plank::before {
     content: "";
     @apply absolute inset-x-5 bottom-3 h-4 rounded-full;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--bookshelf-plank-glow, rgba(0, 0, 0, 0.5));
     filter: blur(12px);
   }
 
   .bookshelf-rail {
-    @apply absolute inset-x-6 bottom-0 h-4 rounded-b-[12px] bg-[linear-gradient(180deg,#4a3322,#261810)] border-t border-[#65452d] shadow-[0_8px_16px_rgba(0,0,0,0.5)];
+    background: var(--bookshelf-rail-bg, linear-gradient(180deg,#4a3322,#261810));
+    border-color: var(--bookshelf-rail-border, #65452d);
+    box-shadow: var(--bookshelf-rail-shadow, 0 8px 16px rgba(0,0,0,0.5));
+    @apply absolute inset-x-6 bottom-0 h-4 rounded-b-[12px] border-t;
   }
 }
-
-

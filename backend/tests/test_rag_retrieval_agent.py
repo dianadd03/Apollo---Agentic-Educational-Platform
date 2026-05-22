@@ -27,7 +27,7 @@ class FakeDb:
         return SimpleNamespace(unique=lambda: SimpleNamespace(all=lambda: self.materials))
 
 
-class FakeSearchAgent:
+class FakeReviewSearch:
     def __init__(self, results_by_query: dict[str, list[CandidateMaterial]] | None = None) -> None:
         self.results_by_query = results_by_query or {}
         self.calls: list[tuple[str, int]] = []
@@ -52,7 +52,7 @@ class FakeSearchAgent:
         )
 
 
-class ReviewingSearchAgent(FakeSearchAgent):
+class ReviewingReviewSearch(FakeReviewSearch):
     def __init__(self, results_by_query: dict[str, list[CandidateMaterial]] | None = None) -> None:
         super().__init__(results_by_query)
         self.review_calls: list[tuple[str, int]] = []
@@ -151,7 +151,7 @@ def test_internal_only_retrieval_returns_balanced_schema_when_coverage_is_comple
         for level in TopicLevel
         for index in range(7)
     ]
-    web = FakeSearchAgent()
+    web = FakeReviewSearch()
     response = run_search(RagRetrievalAgent(FakeDb(materials), web))
 
     assert response.search_metadata.coverage_source == "internal_only"
@@ -163,7 +163,7 @@ def test_internal_only_retrieval_returns_balanced_schema_when_coverage_is_comple
 
 def test_fewer_than_twenty_internal_results_triggers_web_fallback():
     materials = [make_material(f"Internal Graphs {index}", TopicLevel.beginner) for index in range(10)]
-    web = FakeSearchAgent()
+    web = FakeReviewSearch()
     response = run_search(RagRetrievalAgent(FakeDb(materials), web))
 
     assert response.search_metadata.coverage_source == "internal_plus_web"
@@ -171,21 +171,19 @@ def test_fewer_than_twenty_internal_results_triggers_web_fallback():
     assert any(item.source_of_result == "web" for item in response.results)
 
 
-def test_level_shortage_triggers_level_specific_web_fallback():
+def test_level_shortage_triggers_web_fallback_once():
     materials = [make_material(f"Beginner Graphs {index}", TopicLevel.beginner) for index in range(21)]
-    web = FakeSearchAgent()
+    web = FakeReviewSearch()
     response = run_search(RagRetrievalAgent(FakeDb(materials), web))
 
     called_queries = [query for query, _ in web.calls]
-    assert "Graphs intermediate practical guide examples" in called_queries
-    assert "Graphs advanced course deep dive" in called_queries
-    assert "Graphs expert research paper" in called_queries
+    assert called_queries == ["Graphs"]
     assert response.search_metadata.coverage_source == "internal_plus_web"
 
 
 def test_deduplication_prefers_higher_scored_duplicate():
     internal = make_material("Graphs Duplicate", TopicLevel.beginner, link="https://example.com/graphs")
-    web = FakeSearchAgent(
+    web = FakeReviewSearch(
         {
             "Graphs intermediate guide": [
                 web_candidate("Graphs Duplicate", "https://example.com/graphs/", "intermediate", confidence=0.6)
@@ -211,7 +209,7 @@ def test_ranking_prefers_verified_internal_materials():
         trust=0.55,
     )
     verified = make_material("Graphs Verified", TopicLevel.beginner, verified=True, likes=3, quality=0.9, trust=0.95)
-    agent = RagRetrievalAgent(FakeDb([general, verified]), FakeSearchAgent())
+    agent = RagRetrievalAgent(FakeDb([general, verified]), FakeReviewSearch())
 
     candidates = asyncio.run(agent.search_internal_materials(FakeDb([general, verified]), "Graphs"))
 
@@ -234,7 +232,7 @@ def test_beginner_web_fallback_does_not_force_hard_material_into_beginner_level(
         "ease_of_understanding_score": 28,
         "trust_score": 86,
     }
-    web = FakeSearchAgent({"Graphs beginner friendly basics tutorial introduction no prerequisites": [hard_result]})
+    web = FakeReviewSearch({"Graphs": [hard_result]})
 
     response = run_search(RagRetrievalAgent(FakeDb([]), web), max_results=28)
 
@@ -249,7 +247,7 @@ def test_beginner_internal_material_with_low_ease_is_reclassified():
         ease=0.32,
         summary="Beginner label but proof-heavy theorem treatment for graph algorithms.",
     )
-    agent = RagRetrievalAgent(FakeDb([material]), FakeSearchAgent())
+    agent = RagRetrievalAgent(FakeDb([material]), FakeReviewSearch())
 
     candidates = asyncio.run(agent.search_internal_materials(FakeDb([material]), "Graphs"))
 
@@ -264,7 +262,7 @@ def test_intermediate_book_with_proof_language_stays_intermediate_when_ease_is_o
         summary="A textbook chapter with some proofs and theorem examples explained step by step.",
         material_type=MaterialType.book,
     )
-    agent = RagRetrievalAgent(FakeDb([material]), FakeSearchAgent())
+    agent = RagRetrievalAgent(FakeDb([material]), FakeReviewSearch())
 
     candidates = asyncio.run(agent.search_internal_materials(FakeDb([material]), "Graphs"))
 
@@ -280,7 +278,7 @@ def test_decimal_db_scores_are_preserved_for_level_and_review_data():
         trust=Decimal("0.880"),
         material_type=MaterialType.book,
     )
-    agent = RagRetrievalAgent(FakeDb([material]), FakeSearchAgent())
+    agent = RagRetrievalAgent(FakeDb([material]), FakeReviewSearch())
 
     candidates = asyncio.run(agent.search_internal_materials(FakeDb([material]), "Graphs"))
 
@@ -290,7 +288,7 @@ def test_decimal_db_scores_are_preserved_for_level_and_review_data():
     assert candidates[0].review_data["trust_score"] == 88
 
 
-def test_cached_web_material_from_database_is_not_marked_internal():
+def test_cached_web_material_from_database_is_marked_as_database_material():
     material = make_material(
         "Cached Web Graphs Guide",
         TopicLevel.beginner,
@@ -298,11 +296,11 @@ def test_cached_web_material_from_database_is_not_marked_internal():
         verified=False,
         link="https://external.example.com/graphs-guide",
     )
-    agent = RagRetrievalAgent(FakeDb([material]), FakeSearchAgent())
+    agent = RagRetrievalAgent(FakeDb([material]), FakeReviewSearch())
 
     candidates = asyncio.run(agent.search_internal_materials(FakeDb([material]), "Graphs"))
 
-    assert candidates[0].source_of_result == "web"
+    assert candidates[0].source_of_result == "db_material"
     assert candidates[0].is_internal is False
 
 
@@ -313,7 +311,7 @@ def test_rag_web_fallback_uses_review_agent_output_for_level_and_scores():
         level="expert",
         confidence=0.91,
     )
-    web = ReviewingSearchAgent({"Graphs expert research paper": [raw_result]})
+    web = ReviewingReviewSearch({"Graphs": [raw_result]})
     materials = [make_material(f"{level.value} Graphs {index}", level) for level in (TopicLevel.beginner, TopicLevel.intermediate, TopicLevel.advanced) for index in range(7)]
 
     response = run_search(RagRetrievalAgent(FakeDb(materials), web), max_results=28)
@@ -340,7 +338,7 @@ def test_reviewed_video_with_high_ease_is_not_put_in_expert_tab():
         "ease_of_understanding_score": 88,
         "trust_score": 80,
     }
-    agent = RagRetrievalAgent(FakeDb([]), FakeSearchAgent())
+    agent = RagRetrievalAgent(FakeDb([]), FakeReviewSearch())
 
     marked = agent._mark_web_candidate(candidate, "Graphs", "expert")
 
