@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createCodingWorkspaceTasks } from "@/components/topics/CodingReviewWorkspace";
 import { ProblemsSection } from "@/components/problems/ProblemsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -250,42 +249,46 @@ function GeneratedTaskCard({
   onOpenCodeReview: () => void;
 }) {
   return (
-    <Card className="rounded-[24px] border border-[#c29f60]/12 bg-[#12141a]/60 p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Problem {index + 1}</p>
-          <h4 className="mt-2 text-xl font-semibold text-[#f4ead6]">{task.title}</h4>
+    <Card className="rounded-[20px] border border-[#c29f60]/14 bg-[#12141a]/70 p-0">
+      <div className="flex flex-col gap-4 border-b border-[#c29f60]/10 px-5 py-4 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#b89a68]">Problem {index + 1}</p>
+          <h4 className="mt-1.5 text-2xl font-semibold leading-8 text-[#f4ead6]">{task.title}</h4>
         </div>
-        <Badge tone="info">Generated</Badge>
+        <Button
+          variant="secondary"
+          className="shrink-0 rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d]"
+          onClick={onOpenCodeReview}
+        >
+          Open code review
+        </Button>
       </div>
-      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[#dccfa6]/78">{task.task}</p>
 
-      <div className="mt-5 space-y-4">
-        <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Examples</p>
-        {task.examples.map((example, exampleIndex) => (
-          <div key={`${task.title}-${exampleIndex}`} className="rounded-[20px] border border-[#c29f60]/10 bg-[#171920] p-4">
-            <p className="text-sm font-semibold text-[#f4ead6]">Example {exampleIndex + 1}</p>
-            <div className="mt-3 grid gap-3 lg:grid-cols-2">
-              <div>
-                <p className="mb-1.5 text-[11px] uppercase tracking-[0.18em] text-[#a3835b]">Input</p>
-                <pre className="min-h-[56px] whitespace-pre-wrap rounded-[14px] border border-[#c29f60]/10 bg-[#0f1117] p-3 text-xs leading-5 text-[#f4ead6]">{example.input}</pre>
+      <div className="px-5 py-4">
+        <div className="rounded-[16px] border border-[#c29f60]/10 bg-[#171920] p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#b89a68]">Problem statement</p>
+          <p className="mt-2 whitespace-pre-wrap text-base leading-7 text-[#f4ead6]">{task.task}</p>
+        </div>
+
+        <div className="mt-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#b89a68]">Examples</p>
+          <div className="mt-2 grid gap-3">
+            {task.examples.map((example, exampleIndex) => (
+              <div key={`${task.title}-${exampleIndex}`} className="grid gap-3 rounded-[16px] border border-[#c29f60]/10 bg-[#101218] p-3 lg:grid-cols-[88px_minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch">
+                <div className="flex items-center text-sm font-semibold text-[#f4ead6]">#{exampleIndex + 1}</div>
+                <div>
+                  <p className="mb-1 text-[11px] uppercase tracking-[0.16em] text-[#a3835b]">Input</p>
+                  <pre className="min-h-[52px] whitespace-pre-wrap rounded-[12px] border border-[#c29f60]/10 bg-[#0b0d12] p-3 text-xs leading-5 text-[#f4ead6]">{example.input}</pre>
+                </div>
+                <div>
+                  <p className="mb-1 text-[11px] uppercase tracking-[0.16em] text-[#a3835b]">Expected output</p>
+                  <pre className="min-h-[52px] whitespace-pre-wrap rounded-[12px] border border-[#c29f60]/10 bg-[#0b0d12] p-3 text-xs leading-5 text-[#f4ead6]">{example.output}</pre>
+                </div>
               </div>
-              <div>
-                <p className="mb-1.5 text-[11px] uppercase tracking-[0.18em] text-[#a3835b]">Output</p>
-                <pre className="min-h-[56px] whitespace-pre-wrap rounded-[14px] border border-[#c29f60]/10 bg-[#0f1117] p-3 text-xs leading-5 text-[#f4ead6]">{example.output}</pre>
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
-
-      <Button
-        variant="secondary"
-        className="mt-5 rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d]"
-        onClick={onOpenCodeReview}
-      >
-        Open code review
-      </Button>
     </Card>
   );
 }
@@ -295,11 +298,10 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState<(typeof CONTENT_TABS)[number]>("Materials");
   const [selectedLevel, setSelectedLevel] = useState<(typeof MATERIAL_LEVELS)[number]>("beginner");
-  const [generatedTasks, setGeneratedTasks] = useState<GeneratedFoundationalTask[]>([]);
-  const [taskTopic, setTaskTopic] = useState<string | null>(null);
+  const [generatedTasks, setGeneratedTasks] = useState<GeneratedFoundationalTask[]>(topic.coding_tasks);
+  const [taskTopic, setTaskTopic] = useState<string | null>(topic.coding_tasks.length ? topic.title : null);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksError, setTasksError] = useState<string | null>(null);
-  const codingTasks = useMemo(() => createCodingWorkspaceTasks(topic.coding_tasks), [topic.coding_tasks]);
   const sortedMaterials = useMemo(() => [...materials].sort((left, right) => {
     const leftReview = parseReviewData(left);
     const rightReview = parseReviewData(right);
@@ -326,17 +328,17 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
   }, [topic.id, materials.length, selectedLevel, activeTab]);
 
   useEffect(() => {
-    setGeneratedTasks([]);
-    setTaskTopic(null);
+    setGeneratedTasks(topic.coding_tasks);
+    setTaskTopic(topic.coding_tasks.length ? topic.title : null);
     setTasksError(null);
     setTasksLoading(false);
-  }, [topic.id]);
+  }, [topic.coding_tasks, topic.id, topic.title]);
 
-  const handleGenerateTasks = async () => {
+  const handleGenerateTasks = async (forceRegenerate = false) => {
     setTasksLoading(true);
     setTasksError(null);
     try {
-      const response = await api.generateFoundationalTasks(topic.title);
+      const response = await api.generateTopicFoundationalTasks(topic.id, forceRegenerate);
       setGeneratedTasks(response.foundational_tasks);
       setTaskTopic(response.topic);
     } catch (err) {
@@ -454,7 +456,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
               variant="secondary"
               className="self-start rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d] md:self-auto"
               disabled={tasksLoading}
-              onClick={() => void handleGenerateTasks()}
+              onClick={() => void handleGenerateTasks(generatedTasks.length > 0)}
             >
               {tasksLoading ? "Generating tasks..." : generatedTasks.length ? "Regenerate tasks" : "Generate Foundational Tasks"}
             </Button>
@@ -479,11 +481,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
                 task={task}
                 index={index}
                 onOpenCodeReview={() =>
-                  navigate(`/topics/${topic.id}/coding-review`, {
-                    state: {
-                      topic,
-                    },
-                  })
+                  navigate(`/topics/${topic.id}/coding-review?task=${encodeURIComponent(task.id ?? `topic-task-${index}`)}`)
                 }
               />
             ))}
@@ -494,35 +492,6 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
           </Card>
         )}
 
-        {codingTasks.length ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {codingTasks.map((task) => (
-              <Card key={task.id} className="rounded-[24px] border border-[#c29f60]/12 bg-[#12141a]/60 p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">{task.kind}</p>
-                    <h4 className="mt-2 text-xl font-semibold text-[#f4ead6]">{task.title}</h4>
-                  </div>
-                  <Badge tone="warning">Full page</Badge>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-[#dccfa6]/76">{task.prompt}</p>
-                <Button
-                  variant="secondary"
-                  className="mt-4 rounded-full border-[#c29f60]/18 bg-[#171920] text-[#f4ead6] hover:bg-[#1f232d]"
-                  onClick={() =>
-                    navigate(`/topics/${topic.id}/coding-review?task=${task.id}`, {
-                      state: {
-                        topic,
-                      },
-                    })
-                  }
-                >
-                  Open code review
-                </Button>
-              </Card>
-            ))}
-          </div>
-        ) : null}
       </div>
     ),
     Roadmap: <FutureSection title="Roadmap" items={topic.roadmap} emptyLabel="Roadmap steps will appear here once backend orchestration is connected." />,

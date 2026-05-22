@@ -7,6 +7,7 @@ class TaskExample(BaseModel):
 
 
 class FoundationalTask(BaseModel):
+    id: str | None = None
     title: str = Field(..., min_length=1)
     task: str = Field(..., min_length=1)
     examples: list[TaskExample] = Field(..., min_length=1)
@@ -22,6 +23,10 @@ class FoundationalTasksRequest(BaseModel):
         if not cleaned:
             raise ValueError("Topic must not be empty.")
         return cleaned
+
+
+class TopicFoundationalTasksRequest(BaseModel):
+    force_regenerate: bool = False
 
 
 class FoundationalTasksResponse(BaseModel):

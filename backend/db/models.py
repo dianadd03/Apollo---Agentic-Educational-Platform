@@ -164,6 +164,26 @@ class UserTopic(Base):
     user: Mapped[User] = relationship(back_populates="topics")
     topic: Mapped[Topic] = relationship(back_populates="learners")
     progress: Mapped[UserTopicProgress | None] = relationship(back_populates="user_topic", cascade="all, delete-orphan")
+    coding_tasks: Mapped[list[UserTopicCodingTask]] = relationship(back_populates="user_topic", cascade="all, delete-orphan", order_by="UserTopicCodingTask.sequence_order")
+
+
+class UserTopicCodingTask(Base):
+    __tablename__ = "user_topic_coding_tasks"
+    __table_args__ = (
+        UniqueConstraint("user_topic_id", "sequence_order", name="uq_user_topic_coding_tasks_order"),
+        Index("ix_user_topic_coding_tasks_user_topic_id", "user_topic_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    user_topic_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("user_topics.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    task: Mapped[str] = mapped_column(Text, nullable=False)
+    examples: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
+    sequence_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    user_topic: Mapped[UserTopic] = relationship(back_populates="coding_tasks")
 
 
 class UserTopicProgress(Base):

@@ -1,4 +1,4 @@
-import type { AuthResponse, ExtractedMaterialMetadata, FoundationalTasksResponse, ManagedMaterialResponse, MaterialKind, ProblemListResponse, SavedSearchResultResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
+import type { AuthResponse, CodeReviewRequest, CodeReviewResponse, ExtractedMaterialMetadata, FoundationalTasksResponse, ManagedMaterialResponse, MaterialKind, ProblemListResponse, SavedSearchResultResponse, SearchMaterialsResponse, Topic, TopicDetail, TopicLevel, UploadedMaterialResponse, User, UserRole } from "@/types/models";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_STORAGE_KEY = "apollo-library-token";
@@ -82,6 +82,18 @@ export const api = {
     return apiFetch<FoundationalTasksResponse>("/api/topics/foundational-tasks", {
       method: "POST",
       body: JSON.stringify({ topic }),
+    }, true);
+  },
+  generateTopicFoundationalTasks(topicId: string, forceRegenerate = false) {
+    return apiFetch<FoundationalTasksResponse>(`/api/topics/${topicId}/foundational-tasks`, {
+      method: "POST",
+      body: JSON.stringify({ force_regenerate: forceRegenerate }),
+    }, true);
+  },
+  reviewCode(payload: CodeReviewRequest) {
+    return apiFetch<CodeReviewResponse>("/api/code-review", {
+      method: "POST",
+      body: JSON.stringify(payload),
     }, true);
   },
   deleteTopic(topicId: string) {
