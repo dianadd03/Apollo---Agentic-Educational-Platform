@@ -80,6 +80,13 @@ def get_foundational_task_agent():
 
 
 @lru_cache(maxsize=1)
+def get_code_review_agent():
+    from backend.agents.code_review_agent import CodeReviewAgent
+
+    return CodeReviewAgent()
+
+
+@lru_cache(maxsize=1)
 def get_problem_aggregator() -> ProblemAggregatorAgent:
     settings = get_settings()
     providers = [CodeforcesProvider(), AtCoderProvider()]

@@ -4,7 +4,8 @@ from uuid import UUID
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from backend.db.models import Topic, UserTopic
+from backend.db.models import Topic, UserTopic, UserTopicCodingTask
+from backend.schemas.foundational_tasks import FoundationalTask
 from backend.schemas.topics import TopicCreateRequest, TopicDetailResponse, TopicResponse
 
 
@@ -64,8 +65,46 @@ class TopicService:
             learning_materials=[],
             roadmap=[],
             exercises=[],
-            coding_tasks=[],
+            coding_tasks=self.list_coding_tasks(user_topic.id),
         )
+
+    def list_coding_tasks(self, user_topic_id: str | UUID) -> list[FoundationalTask]:
+        user_topic_uuid = self._ensure_uuid(user_topic_id)
+        stmt = (
+            select(UserTopicCodingTask)
+            .where(UserTopicCodingTask.user_topic_id == user_topic_uuid)
+            .order_by(UserTopicCodingTask.sequence_order)
+        )
+        tasks = self._db.scalars(stmt).all()
+        return [self._to_coding_task_response(task) for task in tasks]
+
+    def replace_coding_tasks(self, user_id: str | UUID, user_topic_id: str | UUID, tasks: list[FoundationalTask]) -> list[FoundationalTask] | None:
+        user_uuid = self._ensure_uuid(user_id)
+        user_topic_uuid = self._ensure_uuid(user_topic_id)
+        user_topic = self._db.scalar(
+            select(UserTopic).where(UserTopic.user_id == user_uuid, UserTopic.id == user_topic_uuid)
+        )
+        if not user_topic:
+            return None
+
+        self._db.execute(delete(UserTopicCodingTask).where(UserTopicCodingTask.user_topic_id == user_topic_uuid))
+        saved_tasks: list[UserTopicCodingTask] = []
+        for index, task in enumerate(tasks):
+            saved_task = UserTopicCodingTask(
+                user_topic_id=user_topic_uuid,
+                title=task.title,
+                task=task.task,
+                examples=[example.model_dump() for example in task.examples],
+                sequence_order=index,
+            )
+            self._db.add(saved_task)
+            saved_tasks.append(saved_task)
+
+        user_topic.updated_at = datetime.now(timezone.utc)
+        self._db.commit()
+        for task in saved_tasks:
+            self._db.refresh(task)
+        return [self._to_coding_task_response(task) for task in saved_tasks]
 
     def delete_topic(self, user_id: str | UUID, topic_id: str | UUID) -> bool:
         user_uuid = self._ensure_uuid(user_id)
@@ -87,6 +126,14 @@ class TopicService:
             level=user_topic.level,
             created_at=user_topic.created_at,
             user_id=str(user_topic.user_id),
+        )
+
+    def _to_coding_task_response(self, task: UserTopicCodingTask) -> FoundationalTask:
+        return FoundationalTask(
+            id=str(task.id),
+            title=task.title,
+            task=task.task,
+            examples=task.examples,
         )
 
     def _ensure_uuid(self, value: str | UUID) -> UUID:

@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from backend.schemas.foundational_tasks import FoundationalTask
+
 TopicLevel = Literal["beginner", "intermediate", "advanced", "expert"]
 
 
@@ -31,4 +33,4 @@ class TopicDetailResponse(TopicResponse):
     learning_materials: list[dict] = Field(default_factory=list)
     roadmap: list[str] = Field(default_factory=list)
     exercises: list[str] = Field(default_factory=list)
-    coding_tasks: list[str] = Field(default_factory=list)
+    coding_tasks: list[FoundationalTask] = Field(default_factory=list)

@@ -48,7 +48,7 @@ export type TopicDetail = Topic & {
   learning_materials: SearchResult[];
   roadmap: string[];
   exercises: string[];
-  coding_tasks: string[];
+  coding_tasks: GeneratedFoundationalTask[];
 };
 
 export type SearchMaterialsResponse = {
@@ -195,6 +195,7 @@ export type GeneratedTaskExample = {
 };
 
 export type GeneratedFoundationalTask = {
+  id?: string | null;
   title: string;
   task: string;
   examples: GeneratedTaskExample[];
@@ -203,6 +204,19 @@ export type GeneratedFoundationalTask = {
 export type FoundationalTasksResponse = {
   topic: string;
   foundational_tasks: GeneratedFoundationalTask[];
+};
+
+export type CodeReviewRequest = {
+  task: string;
+  code: string;
+  language: string;
+  context?: string | null;
+};
+
+export type CodeReviewResponse = {
+  review_markdown: string;
+  model: string;
+  reviewed_at: string;
 };
 
 export type ReviewFinding = {
