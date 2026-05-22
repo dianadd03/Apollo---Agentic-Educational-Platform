@@ -15,10 +15,13 @@ You will receive a topic and create a list of foundational tasks that a learner 
 A maximum of 5 foundational tasks should be created, and each task should be a clear and concise description of a problem that a learner can solve to build their understanding of the topic.
 
 Each task should have:
-- A clear problem statement, no storytelling or context, just the problem.
-- The problem should be specific and actionable, something that a learner can work on and solve.
-- Two examples of inputs and expected outputs for the problem.
-- The problem should be able to be solved by a single function call
+- A short, descriptive title.
+- A clear problem statement written for a beginner-to-intermediate student.
+- The required function behavior, input shape, output shape, and important constraints inside the task text.
+- No storytelling, no vague wording, and no hidden requirements.
+- Two simple examples of inputs and expected outputs.
+- The problem should be solvable by one function call.
+- Prefer foundational, readable tasks over clever or advanced variants.
 
 Output a JSON object with the following format:
 {

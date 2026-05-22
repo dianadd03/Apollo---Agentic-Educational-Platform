@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.api.routes.auth import router as auth_router
+from backend.api.routes.code_review import router as code_review_router
 from backend.api.routes.materials import router as materials_router
 from backend.api.routes.problems import router as problems_router
 from backend.api.routes.search import router as search_router
@@ -44,3 +45,4 @@ app.include_router(topics_router)
 app.include_router(materials_router)
 app.include_router(search_router)
 app.include_router(problems_router)
+app.include_router(code_review_router)

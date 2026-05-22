@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createCodingWorkspaceTasks } from "@/components/topics/CodingReviewWorkspace";
 import { ProblemsSection } from "@/components/problems/ProblemsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -259,7 +258,6 @@ function GeneratedTaskCard({
           <p className="text-xs uppercase tracking-[0.22em] text-[#b89a68]">Problem {index + 1}</p>
           <h4 className="mt-2 text-xl font-semibold text-[var(--topic-title-color)]">{task.title}</h4>
         </div>
-        <Badge tone="info">Generated</Badge>
       </div>
       <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[var(--topic-copy-color)]">{task.task}</p>
 
@@ -298,11 +296,10 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState<(typeof CONTENT_TABS)[number]>("Materials");
   const [selectedLevel, setSelectedLevel] = useState<(typeof MATERIAL_LEVELS)[number]>("beginner");
-  const [generatedTasks, setGeneratedTasks] = useState<GeneratedFoundationalTask[]>([]);
-  const [taskTopic, setTaskTopic] = useState<string | null>(null);
+  const [generatedTasks, setGeneratedTasks] = useState<GeneratedFoundationalTask[]>(topic.coding_tasks);
+  const [taskTopic, setTaskTopic] = useState<string | null>(topic.coding_tasks.length ? topic.title : null);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksError, setTasksError] = useState<string | null>(null);
-  const codingTasks = useMemo(() => createCodingWorkspaceTasks(topic.coding_tasks), [topic.coding_tasks]);
   const sortedMaterials = useMemo(() => [...materials].sort((left, right) => {
     const leftReview = parseReviewData(left);
     const rightReview = parseReviewData(right);
@@ -329,17 +326,17 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
   }, [topic.id, materials.length, selectedLevel, activeTab]);
 
   useEffect(() => {
-    setGeneratedTasks([]);
-    setTaskTopic(null);
+    setGeneratedTasks(topic.coding_tasks);
+    setTaskTopic(topic.coding_tasks.length ? topic.title : null);
     setTasksError(null);
     setTasksLoading(false);
-  }, [topic.id]);
+  }, [topic.coding_tasks, topic.id, topic.title]);
 
-  const handleGenerateTasks = async () => {
+  const handleGenerateTasks = async (forceRegenerate = false) => {
     setTasksLoading(true);
     setTasksError(null);
     try {
-      const response = await api.generateFoundationalTasks(topic.title);
+      const response = await api.generateTopicFoundationalTasks(topic.id, forceRegenerate);
       setGeneratedTasks(response.foundational_tasks);
       setTaskTopic(response.topic);
     } catch (err) {
@@ -457,7 +454,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
               variant="secondary"
               className="self-start rounded-full border-[#c29f60]/18 bg-[var(--btn-secondary-bg)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover-bg)] hover:text-[var(--btn-secondary-hover-text)] md:self-auto"
               disabled={tasksLoading}
-              onClick={() => void handleGenerateTasks()}
+              onClick={() => void handleGenerateTasks(generatedTasks.length > 0)}
             >
               {tasksLoading ? "Generating tasks..." : generatedTasks.length ? "Regenerate tasks" : "Generate Foundational Tasks"}
             </Button>
@@ -482,11 +479,7 @@ export function TopicDetails({ topic, materials, problems, problemsMeta, problem
                 task={task}
                 index={index}
                 onOpenCodeReview={() =>
-                  navigate(`/topics/${topic.id}/coding-review`, {
-                    state: {
-                      topic,
-                    },
-                  })
+                  navigate(`/topics/${topic.id}/coding-review?task=${encodeURIComponent(task.id ?? `topic-task-${index}`)}`)
                 }
               />
             ))}
