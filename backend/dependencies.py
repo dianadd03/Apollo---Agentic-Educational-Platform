@@ -1,4 +1,5 @@
 from functools import lru_cache
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,10 @@ def get_topic_service(db: Any = Depends(get_db)) -> Any:
 
 @lru_cache(maxsize=1)
 def get_review_agent() -> Any:
+    settings = get_settings()
+    if settings.tavily_api_key and not os.environ.get("APOLLO_TAVILY_API_KEY"):
+        os.environ["APOLLO_TAVILY_API_KEY"] = settings.tavily_api_key
+
     agents_dir = Path(__file__).resolve().parent / "agents"
     agents_dir_text = str(agents_dir)
     if agents_dir_text not in sys.path:

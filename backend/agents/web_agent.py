@@ -1,10 +1,15 @@
 from tavily import TavilyClient
-
+import os
 
 class WebAgent:
     api_key = "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"
 
-    def __init__(self):
+    def __init__(self):        
+        self.api_key = os.getenv("APOLLO_TAVILY_API_KEY") or os.getenv("TAVILY_API_KEY")
+        if not self.api_key:
+            raise RuntimeError("Missing APOLLO_TAVILY_API_KEY or TAVILY_API_KEY in the environment.")
+
+
         self.client = TavilyClient(self.api_key)
 
     def web_extract_agent(self, link: str) -> str:
