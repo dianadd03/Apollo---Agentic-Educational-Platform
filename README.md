@@ -147,7 +147,7 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 cd backend
 pip install -r requirements.txt
 # set the variables in .env (see the Configuration section)
-uvicorn main:app --reload --port 8000
+uvicorn backend.main:app --reload --port 8000
 ```
 
 ### Frontend
