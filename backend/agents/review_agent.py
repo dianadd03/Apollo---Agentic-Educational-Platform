@@ -14,7 +14,16 @@ webAgent = WebAgent()
 
 def extract_web_site(link: str) -> str:
     """Extract information from the given link"""
-    return webAgent.web_extract_agent(link)
+    try:
+        content = webAgent.web_extract_agent(link)
+
+        if not content:
+            return "No extractable content was found for this URL. Skip this source and continue with other results."
+
+        return content
+
+    except Exception as e:
+        return f"Failed to extract content from this URL: {str(e)}"
 
 
 def level_from_score(ease_of_understanding_score: int) -> Literal["beginner", "intermediate", "advanced", "expert"]:

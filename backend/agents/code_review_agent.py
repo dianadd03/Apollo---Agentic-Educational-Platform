@@ -70,6 +70,7 @@ Output Markdown with exactly these section headings, in this order:
 Formatting rules:
 - Do not mention the model name or runtime.
 - Keep each bullet short and actionable.
+- Every bullet in Critical issues, Important improvements, and Nice-to-haves must include a concrete "Suggestion:" clause.
 - In Critical issues, Important improvements, and Nice-to-haves, start every line-specific bullet with "Lines X-Y:" or "Line X:" using the numbered code provided by the user.
 - If a finding applies to the whole solution, start it with "General:".
 - Suggested tests must include at least 5 concrete cases with expected results.
@@ -95,7 +96,7 @@ class CodeReviewAgent:
                 ("user", self._build_user_prompt(payload)),
             ]
         )
-        return enforce_review_contract(str(response.content))
+        return enforce_review_contract(str(response.content), payload)
 
     def _build_user_prompt(self, payload: CodeReviewRequest) -> str:
         context = f"\n\nOptional context / existing tests:\n{payload.context}" if payload.context else ""
@@ -112,10 +113,10 @@ def _number_code(code: str) -> str:
     return "\n".join(f"{index:>4}: {line}" for index, line in enumerate(code.splitlines(), start=1))
 
 
-def enforce_review_contract(markdown: str) -> str:
+def enforce_review_contract(markdown: str, payload: CodeReviewRequest | None = None) -> str:
     cleaned = markdown.strip()
     if not cleaned:
-        cleaned = "No review content was produced."
+        cleaned = _fallback_review(payload)
 
     section_bodies = {section: _extract_section(cleaned, section) for section in REQUIRED_SECTIONS}
     orphan_feedback = _orphan_feedback(cleaned, section_bodies)
@@ -131,6 +132,7 @@ def enforce_review_contract(markdown: str) -> str:
         section_bodies["Nice-to-haves"] = "\n".join(part for part in [existing_nice, optional_improvements] if part).strip()
 
     section_bodies = _move_test_feedback(section_bodies)
+    section_bodies = _ensure_actionable_fallbacks(section_bodies, payload)
 
     normalized_sections: list[str] = []
     for section in REQUIRED_SECTIONS:
@@ -139,6 +141,47 @@ def enforce_review_contract(markdown: str) -> str:
             body = "- No specific feedback provided for this section."
         normalized_sections.append(f"## {section}\n{body.strip()}")
     return "\n\n".join(normalized_sections)
+
+
+def _fallback_review(payload: CodeReviewRequest | None) -> str:
+    language = payload.language if payload else "the selected language"
+    return (
+        "## Critical issues (must-fix)\n"
+        "- General: The reviewer returned no concrete blocking bug. Suggestion: Re-submit after checking the code against the task requirements and edge cases below.\n\n"
+        "## Important improvements (should-fix)\n"
+        f"- General: Verify that the {language} solution handles base cases, invalid or empty inputs, and impossible results exactly as the task asks. Suggestion: Add explicit guards before the main algorithm.\n"
+        "- General: Confirm the algorithm fits the expected constraints, not just the sample cases. Suggestion: State the intended time and space complexity, then compare it with the largest input size.\n\n"
+        "## Nice-to-haves\n"
+        "- General: Make important variables describe their role in the algorithm. Suggestion: Prefer names that reflect the problem domain over single-letter placeholders when the meaning is not obvious.\n\n"
+        "## Suggested tests (with expected results)\n"
+        "- Minimum valid input: use the smallest input allowed by the task; expected result should match the base-case definition.\n"
+        "- Typical sample input: use a normal case from the problem statement; expected result should match the provided sample.\n"
+        "- Edge case with empty or missing data: expected result should be the task's documented fallback or error behavior.\n"
+        "- Impossible or no-solution case: expected result should be the task's required sentinel value or empty result.\n"
+        "- Larger stress case: expected result should remain correct within the intended complexity."
+    )
+
+
+def _ensure_actionable_fallbacks(section_bodies: dict[str, str], payload: CodeReviewRequest | None) -> dict[str, str]:
+    if any(_has_specific_feedback(body) for body in section_bodies.values()):
+        return section_bodies
+
+    fallback = _fallback_review(payload)
+    return {section: _extract_section(fallback, section) for section in REQUIRED_SECTIONS}
+
+
+def _has_specific_feedback(body: str) -> bool:
+    cleaned = body.strip().lower()
+    if not cleaned:
+        return False
+    empty_markers = [
+        "no review content was produced",
+        "no specific feedback provided",
+        "no feedback",
+        "no issues",
+        "nothing to report",
+    ]
+    return not any(marker in cleaned for marker in empty_markers)
 
 
 def _extract_section(markdown: str, section: str) -> str:

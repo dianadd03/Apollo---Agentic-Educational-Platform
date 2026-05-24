@@ -8,11 +8,30 @@ class WebAgent:
         self.client = TavilyClient(self.api_key)
 
     def web_extract_agent(self, link: str) -> str:
-        extract = self.client.extract(link)
-        if not extract.get("results"):
-            extract = self.client.extract(link, extract_depth="advanced")
+        try:
+            extract = self.client.extract(link)
 
-        return extract["results"][0]["raw_content"]
+            results = extract.get("results", [])
+
+            if not results:
+                extract = self.client.extract(link, extract_depth="advanced")
+                results = extract.get("results", [])
+
+            if not results:
+                print(f"[WebAgent] No extract results for link: {link}")
+                return ""
+
+            raw_content = results[0].get("raw_content")
+
+            if not raw_content:
+                print(f"[WebAgent] Empty raw_content for link: {link}")
+                return ""
+
+            return raw_content
+
+        except Exception as e:
+            print(f"[WebAgent] Extract failed for {link}: {e}")
+            return ""
 
     def web_search_agent(self, topic: str, max_results_each=10):
         searches = [
