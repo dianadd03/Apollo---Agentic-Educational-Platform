@@ -29,7 +29,7 @@ Platformă educațională unde studenții și profesorii **caută un topic tehni
 
 1. **Studenți** → creează *Topics* (cu nivel: beginner/intermediate/advanced) și caută materiale prin AI; primesc rezultate scorate (calitate + ușurință de înțelegere)
 2. **Profesori/Admini** → upload materiale (PDF, link-uri), verificare, publish/unpublish
-3. **Agent search** → `SearchAgent` interoghează Tavily (web, YouTube, archive.org, papers) → `ReviewAgent` (LLM local opțional, Ollama/Gemini) scorează materialele 0–100 pe calitate și accesibilitate → totul persistat în DB cu proveniență
+3. **Agent search** → `ReviewAgent` folosește `WebAgent` pentru Tavily (web, YouTube, archive.org, papers) și scorează materialele 0–100 pe calitate și accesibilitate → totul persistat în DB cu proveniență
 
 ---
 
@@ -54,7 +54,7 @@ Platformă educațională unde studenții și profesorii **caută un topic tehni
 
 ## Pagini frontend (`/src/pages/`)
 
-`LoginPage`, `RegisterPage`, `LibraryPage` (dashboard cu topics), `TopicPage` (detalii + auto-search), `ManagedMaterialsPage` (admin), `MaterialUploadPage`
+`LoginPage`, `RegisterPage`, `LibraryPage` (dashboard cu topics), `TopicPage` (detalii topic), `CodingReviewPage`, `ManagedMaterialsPage` (admin), `MaterialUploadPage`
 
 ---
 
@@ -76,7 +76,7 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 
 ## Probleme observate în cod
 
-- **Cheia API Tavily este hardcoded** în `backend/agents/search_agent.py:20` — ar trebui mutată în `.env` (`APOLLO_TAVILY_API_KEY`)
+- Cheile pentru servicii externe trebuie setate în `.env` (`APOLLO_TAVILY_API_KEY`, opțional `LANGSMITH_API_KEY`)
 - `ReviewAgent` este încărcat dinamic cu shims peste LangChain — fragil; dacă LLM-ul local nu e disponibil, se cade pe scoring euristic
 - MVP funcțional: auth, search agentic, topic management, vector search, multi-role workflow
 
@@ -85,7 +85,7 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 ## Fișiere cheie
 
 - `backend/main.py` — entry FastAPI
-- `backend/agents/search_agent.py` + `review_agent.py` — nucleul agentic
+- `backend/agents/review_agent.py` + `backend/agents/web_agent.py` — nucleul agentic pentru web search și scoring
 - `backend/services/material_search_service.py` — orchestrare căutare + persistare
 - `backend/db/models.py` — schema DB
 - `src/app/App.tsx` — routing
@@ -102,12 +102,12 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 | 2 | **Retrieval materiale (DB intern + fallback web)** | Implementat (pgvector intern + Tavily/DuckDuckGo fallback) |
 | 3 | **Validare & quality assurance** (relevanță, retry când validarea eșuează) | Parțial — `ReviewAgent` există dar e stubbed/opțional |
 | 4 | **Ranking & learning path** (sortare după dificultate, tabel sortabil, explicații) | Parțial — scoring există, dar UI tabelar + "why recommended" lipsesc |
-| 5 | **Problem set aggregator** (Codeforces/LeetCode/AtCoder + general problems) | Lipsește complet |
-| 6 | **Foundational task generation** ("Implement BFS" etc.) | Lipsește complet |
-| 7 | **Code editor workspace** (paste cod, language selection, submit) | Lipsește complet |
-| 8 | **AI Code Review Engine** (Bugs, Edge Cases, Optimizations, Styling) | Lipsește complet |
-| 9 | **Review UX & code mapping** (highlight la hover, stale feedback) | Lipsește complet |
-| 10 | **Agent orchestration & reliability** (retry, structured output) | Parțial — `SearchAgent` + `ReviewAgent`, dar fără retry bounded |
+| 5 | **Problem set aggregator** (Codeforces/LeetCode/AtCoder + general problems) | Implementat |
+| 6 | **Foundational task generation** ("Implement BFS" etc.) | Implementat |
+| 7 | **Code editor workspace** (paste cod, language selection, submit) | Implementat |
+| 8 | **AI Code Review Engine** (Bugs, Edge Cases, Optimizations, Styling) | Implementat |
+| 9 | **Review UX & code mapping** (highlight la hover, stale feedback) | Parțial |
+| 10 | **Agent orchestration & reliability** (retry, structured output) | Parțial — `ReviewAgent` + servicii backend, dar fără retry bounded complet |
 | 11 | **Trust, explainability, guardrails** (provenance, confidence) | Parțial — `TopicSearchResult` are audit trail, trust_level pe materiale |
 | 12 | **Admin controls** (verify materiale, feedback) | Implementat (`ManagedMaterialsPage`, `MaterialFeedback`) |
 | 13 | **Observability & data model scalabil** | Data model OK, telemetrie/tracing lipsește |
@@ -122,21 +122,18 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 - [ ] validation agent (parțial)
 - [ ] difficulty ranking (parțial)
 - [ ] sortable materials table
-- [ ] problem links aggregator
-- [ ] foundational task generation
-- [ ] code editor
-- [ ] categorized AI code review
+- [x] problem links aggregator
+- [x] foundational task generation
+- [x] code editor
+- [x] categorized AI code review
 
 ---
 
 ## Ce ai deja vs ce mai trebuie făcut
 
-**Ai gata (~40% din scope):** autentificare cu roluri, search agentic Tavily + DuckDuckGo, retrieval intern cu pgvector, validare materiale (manual + ReviewAgent stubbed), feedback users, admin verify.
+**Ai gata:** autentificare cu roluri, search agentic Tavily + DuckDuckGo, retrieval intern cu pgvector, validare materiale, problem aggregation, foundational tasks, code review, feedback users, admin verify.
 
-**Lipsesc piesele mari:**
-- **Epic 5** — Aggregator probleme (Codeforces/LeetCode/AtCoder) cu normalizare dificultate
-- **Epic 6** — Generator de task-uri fundamentale (LLM)
-- **Epic 7+8** — Code editor (Monaco?) + review AI cu 4 categorii (Bugs / Edge Cases / Optimizations / Styling)
+**Mai trebuie rafinat:**
 - **Epic 9** — Mapare suggestion ↔ regiune cod (line ranges/AST anchors), stale state după edit
 - **Epic 4** — Tabel sortabil + "Why recommended" explanation
 - **Epic 10** — Orchestrator structurat cu retry policies pe stage și schemas tipizate
