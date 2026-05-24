@@ -7,7 +7,6 @@ from uuid import uuid4
 from backend.agents.rag_retrieval_agent import RagRetrievalAgent
 from backend.db.models import (
     Material,
-    MaterialLike,
     MaterialSourceType,
     MaterialTag,
     MaterialTopicLink,
@@ -89,7 +88,6 @@ def make_material(
     quality: float = 0.8,
     ease: float = 0.75,
     trust: float = 0.85,
-    likes: int = 0,
     summary: str | None = None,
     material_type: MaterialType = MaterialType.article,
 ) -> Material:
@@ -114,7 +112,6 @@ def make_material(
         updated_at=datetime.now(timezone.utc),
     )
     material.tags = [MaterialTag(category="Graphs", relevance=1.0)]
-    material.likes = [MaterialLike(material_id=material.id, user_id=uuid4()) for _ in range(likes)]
     material.chunks = []
     material.topic_links = [MaterialTopicLink(material_id=material.id, topic_id=topic.id, topic=topic)]
     return material
@@ -208,7 +205,7 @@ def test_ranking_prefers_verified_internal_materials():
         quality=0.6,
         trust=0.55,
     )
-    verified = make_material("Graphs Verified", TopicLevel.beginner, verified=True, likes=3, quality=0.9, trust=0.95)
+    verified = make_material("Graphs Verified", TopicLevel.beginner, verified=True, quality=0.9, trust=0.95)
     agent = RagRetrievalAgent(FakeDb([general, verified]), FakeReviewSearch())
 
     candidates = asyncio.run(agent.search_internal_materials(FakeDb([general, verified]), "Graphs"))

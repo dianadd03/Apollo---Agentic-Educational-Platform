@@ -17,8 +17,6 @@ export type CandidateMaterialResult = {
   reason_for_inclusion: string;
   confidence: number;
   score?: number | null;
-  like_count?: number;
-  user_has_liked?: boolean;
   is_verified?: boolean;
   is_internal?: boolean;
   source_of_result?: string;

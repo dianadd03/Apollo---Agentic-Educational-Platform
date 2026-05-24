@@ -31,8 +31,8 @@ export function RegisterPage() {
       <div className="grid w-full max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center relative z-10">
         <div className="px-2">
           <p className="text-sm uppercase tracking-[0.28em] text-[#a3835b]">Apollo</p>
-          <h1 className="mt-4 text-6xl font-semibold tracking-tight text-[#f4ead6] font-serif">Create a study account, then organize every topic like a premium shelf entry.</h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-[#dccfa6]/80">
+          <h1 className="mt-4 text-6xl font-semibold tracking-tight text-[var(--section-title-color)] font-serif">Create a study account, then organize every topic like a premium shelf entry.</h1>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--library-copy-color)]">
             Registration stays simple. The learning level is chosen later for each topic you save.
           </p>
         </div>
@@ -45,8 +45,8 @@ export function RegisterPage() {
             loading={loading}
             error={error}
           />
-          <p className="mt-4 text-center text-sm text-[#dccfa6]/60">
-            Already registered? <Link className="text-[#c29f60] hover:text-[#f4ead6] transition-colors" to="/login">Login here</Link>
+          <p className="mt-4 text-center text-sm text-[var(--library-copy-color)]">
+            Already registered? <Link className="text-[#c29f60] hover:text-[var(--foreground)] transition-colors" to="/login">Login here</Link>
           </p>
         </div>
       </div>

@@ -191,9 +191,6 @@ class MaterialSearchService:
                 .selectinload(Material.tags),
                 selectinload(TopicSearchResult.items)
                 .selectinload(TopicSearchResultItem.material)
-                .selectinload(Material.likes),
-                selectinload(TopicSearchResult.items)
-                .selectinload(TopicSearchResultItem.material)
                 .selectinload(Material.topic_links)
                 .selectinload(MaterialTopicLink.topic),
             )
@@ -211,9 +208,6 @@ class MaterialSearchService:
                 selectinload(TopicSearchResult.items)
                 .selectinload(TopicSearchResultItem.material)
                 .selectinload(Material.tags),
-                selectinload(TopicSearchResult.items)
-                .selectinload(TopicSearchResultItem.material)
-                .selectinload(Material.likes),
                 selectinload(TopicSearchResult.items)
                 .selectinload(TopicSearchResultItem.material)
                 .selectinload(Material.topic_links)
@@ -240,7 +234,7 @@ class MaterialSearchService:
                     "user_id": current_user_id,
                 }
             )
-        ranked.sort(key=lambda item: (item["score"], self._like_count(item["material"])), reverse=True)
+        ranked.sort(key=lambda item: item["score"], reverse=True)
         return ranked
 
     def _persist_external_results(
@@ -320,7 +314,7 @@ class MaterialSearchService:
                 continue
             seen_keys.add(key)
             merged.append({**item, "user_id": current_user_id})
-        merged.sort(key=lambda row: (row["score"], self._like_count(row["material"])), reverse=True)
+        merged.sort(key=lambda row: row["score"], reverse=True)
         return merged
 
     def _build_response(
@@ -427,8 +421,6 @@ class MaterialSearchService:
             reason_for_inclusion=self._reason_for_inclusion(material, source_of_result),
             confidence=round(min(max(float(material.trust_score or score), 0), 1), 3),
             score=round(min(max(score, 0), 1), 3),
-            like_count=response.like_count,
-            user_has_liked=response.user_has_liked,
             is_verified=response.is_verified,
             is_internal=source_of_result != "web",
             source_of_result=source_of_result,
@@ -466,7 +458,6 @@ class MaterialSearchService:
             select(Material)
             .options(
                 selectinload(Material.tags),
-                selectinload(Material.likes),
                 selectinload(Material.chunks),
                 selectinload(Material.topic_links).selectinload(MaterialTopicLink.topic),
             )
@@ -479,7 +470,6 @@ class MaterialSearchService:
             select(Material)
             .options(
                 selectinload(Material.tags),
-                selectinload(Material.likes),
                 selectinload(Material.chunks),
                 selectinload(Material.topic_links).selectinload(MaterialTopicLink.topic),
             )
@@ -513,7 +503,6 @@ class MaterialSearchService:
         trust_score = float(material.trust_score or 0)
         verified_boost = 0.1 if material.is_verified or material.trust_level == TrustLevel.verified else 0.0
         source_boost = SOURCE_TYPE_BOOST.get(material.source_type, 0.0)
-        like_boost = min(self._like_count(material), 10) / 100
         external_boost = external_confidence * 0.2 if external_confidence is not None else 0.0
 
         score = (
@@ -527,7 +516,6 @@ class MaterialSearchService:
             + trust_score * 0.06
             + verified_boost
             + source_boost
-            + like_boost
             + external_boost
         )
         return round(min(score, 1.0), 3)
@@ -561,7 +549,6 @@ class MaterialSearchService:
             select(Material)
             .options(
                 selectinload(Material.tags),
-                selectinload(Material.likes),
                 selectinload(Material.chunks),
                 selectinload(Material.topic_links).selectinload(MaterialTopicLink.topic),
             )
@@ -606,8 +593,6 @@ class MaterialSearchService:
             return "admin"
         if material.source_type == MaterialSourceType.professor_managed:
             return "professor"
-        if self._like_count(material) >= 5:
-            return "promoted"
         return "db_internal"
 
     def _source_label(self, material: Material) -> str:
@@ -634,10 +619,10 @@ class MaterialSearchService:
         if source_of_result == "web":
             return "Saved external result for future reuse after fallback retrieval because it remained strong after ranking."
         if source_of_result == "db_material":
-            return "Database material ranked using topic relevance, quality, ease, source trust, and likes."
+            return "Database material ranked using topic relevance, quality, ease, and source trust."
         if material.is_verified:
-            return "Verified internal material ranked highly for this topic based on relevance, trust, and engagement."
-        return "Internal material ranked using topic relevance, tags, quality, ease, source trust, and likes."
+            return "Verified internal material ranked highly for this topic based on relevance and trust."
+        return "Internal material ranked using topic relevance, tags, quality, ease, and source trust."
 
     def _map_resource_type(self, resource_type: str) -> MaterialType:
         mapping = {
@@ -673,9 +658,6 @@ class MaterialSearchService:
 
     def _tokenize(self, text: str) -> list[str]:
         return [token for token in "".join(char.lower() if char.isalnum() else " " for char in text).split() if token]
-
-    def _like_count(self, material: Material) -> int:
-        return len(material.likes)
 
     def _dedupe_key(self, material: Material) -> str:
         if material.link:

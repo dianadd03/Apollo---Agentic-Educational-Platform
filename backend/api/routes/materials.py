@@ -15,7 +15,6 @@ from backend.dependencies import get_current_user, get_extractor_agent, get_mate
 from backend.schemas.materials import (
     MaterialActivationRequest,
     MaterialCreateRequest,
-    MaterialLikeResponse,
     MaterialResponse,
     MaterialUpdateRequest,
     MaterialUploadRequest,
@@ -165,27 +164,3 @@ def set_material_active(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
-
-@router.post("/{material_id}/like", response_model=MaterialLikeResponse)
-def like_material(
-    material_id: str,
-    current_user: User = Depends(get_current_user),
-    service: MaterialService = Depends(get_material_service),
-) -> MaterialLikeResponse:
-    try:
-        return service.like_material(material_id, current_user)
-    except ValueError as exc:
-        status_code = status.HTTP_409_CONFLICT if "already liked" in str(exc).lower() else status.HTTP_404_NOT_FOUND
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
-
-
-@router.delete("/{material_id}/like", response_model=MaterialLikeResponse)
-def unlike_material(
-    material_id: str,
-    current_user: User = Depends(get_current_user),
-    service: MaterialService = Depends(get_material_service),
-) -> MaterialLikeResponse:
-    try:
-        return service.unlike_material(material_id, current_user)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

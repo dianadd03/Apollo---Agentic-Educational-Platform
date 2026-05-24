@@ -39,8 +39,6 @@ class CandidateMaterial(BaseModel):
     reason_for_inclusion: str
     confidence: float = Field(..., ge=0.0, le=1.0)
     score: float | None = Field(default=None, ge=0.0, le=1.0)
-    like_count: int = 0
-    user_has_liked: bool = False
     is_verified: bool = False
     is_internal: bool = False
     source_of_result: str = "db_internal"

@@ -6,13 +6,12 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import UploadFile
-from sqlalchemy import Select, delete, select
+from sqlalchemy import Select, select
 from sqlalchemy.orm import Session, selectinload
 
 from backend.config import get_settings
 from backend.db.models import (
     Material,
-    MaterialLike,
     MaterialSourceType,
     MaterialTag,
     MaterialTopicLink,
@@ -25,7 +24,6 @@ from backend.db.models import (
 from backend.schemas.materials import (
     MaterialActivationRequest,
     MaterialCreateRequest,
-    MaterialLikeResponse,
     MaterialResponse,
     MaterialUpdateRequest,
     MaterialUploadRequest,
@@ -45,7 +43,6 @@ class MaterialService:
             select(Material)
             .options(
                 selectinload(Material.tags),
-                selectinload(Material.likes),
                 selectinload(Material.topic_links).selectinload(MaterialTopicLink.topic),
             )
             .where(Material.source_type.in_([MaterialSourceType.professor_managed, MaterialSourceType.admin_managed]))
@@ -177,29 +174,8 @@ class MaterialService:
         material = self._load_material(material.id)
         return self.to_material_response(material, current_user.id)
 
-    def like_material(self, material_id: str | UUID, current_user: User) -> MaterialLikeResponse:
-        material = self._get_material(material_id)
-        existing_like = self._db.scalar(
-            select(MaterialLike).where(MaterialLike.material_id == material.id, MaterialLike.user_id == current_user.id)
-        )
-        if existing_like:
-            raise ValueError("You have already liked this material.")
-
-        self._db.add(MaterialLike(material_id=material.id, user_id=current_user.id))
-        self._db.commit()
-        return self._to_like_response(material.id, current_user.id)
-
-    def unlike_material(self, material_id: str | UUID, current_user: User) -> MaterialLikeResponse:
-        material_uuid = self._ensure_uuid(material_id)
-        self._db.execute(
-            delete(MaterialLike).where(MaterialLike.material_id == material_uuid, MaterialLike.user_id == current_user.id)
-        )
-        self._db.commit()
-        return self._to_like_response(material_uuid, current_user.id)
-
     def to_material_response(self, material: Material, current_user_id: UUID | None = None) -> MaterialResponse:
-        like_count = len(material.likes)
-        user_has_liked = any(like.user_id == current_user_id for like in material.likes) if current_user_id else False
+        del current_user_id
         return MaterialResponse(
             id=str(material.id),
             canonical_name=material.canonical_name,
@@ -215,8 +191,6 @@ class MaterialService:
             is_published=material.is_published,
             is_active=material.is_active,
             is_verified=material.is_verified,
-            like_count=like_count,
-            user_has_liked=user_has_liked,
             tags=[tag.category for tag in material.tags],
             topics=[
                 TopicSummary(id=str(link.topic.id), title=link.topic.title, slug=link.topic.slug)
@@ -237,14 +211,6 @@ class MaterialService:
             shutil.copyfileobj(upload.file, target)
         return destination.as_posix()
 
-    def _to_like_response(self, material_id: UUID, current_user_id: UUID) -> MaterialLikeResponse:
-        material = self._load_material(material_id)
-        return MaterialLikeResponse(
-            material_id=str(material.id),
-            like_count=len(material.likes),
-            user_has_liked=any(like.user_id == current_user_id for like in material.likes),
-        )
-
     def _get_material(self, material_id: str | UUID) -> Material:
         material = self._load_material(material_id)
         if material is None:
@@ -256,7 +222,6 @@ class MaterialService:
             select(Material)
             .options(
                 selectinload(Material.tags),
-                selectinload(Material.likes),
                 selectinload(Material.topic_links).selectinload(MaterialTopicLink.topic),
             )
             .where(Material.id == self._ensure_uuid(material_id))

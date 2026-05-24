@@ -166,7 +166,6 @@ class RagRetrievalAgent:
             .outerjoin(Material.topic_links)
             .options(
                 selectinload(Material.tags),
-                selectinload(Material.likes),
                 selectinload(Material.chunks),
                 selectinload(Material.topic_links).selectinload(MaterialTopicLink.topic),
             )
@@ -264,7 +263,6 @@ class RagRetrievalAgent:
             reason_for_inclusion=self._internal_reason(material, retrieval_method),
             confidence=round(trust, 3),
             score=score,
-            like_count=len(material.likes),
             is_verified=material.is_verified,
             is_internal=is_internal,
             source_of_result=source_of_result,

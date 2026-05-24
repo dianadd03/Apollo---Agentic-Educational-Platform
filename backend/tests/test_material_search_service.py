@@ -6,7 +6,6 @@ from uuid import uuid4
 
 from backend.db.models import (
     Material,
-    MaterialLike,
     MaterialSourceType,
     MaterialTag,
     MaterialTopicLink,
@@ -103,7 +102,6 @@ def make_material(
     quality_score: float = 0.6,
     ease_score: float = 0.5,
     verified: bool = False,
-    likes: int = 0,
     topic_title: str = "Dynamic Programming",
     tags: list[str] | None = None,
     link: str | None = None,
@@ -129,7 +127,6 @@ def make_material(
         updated_at=datetime.now(timezone.utc),
     )
     material.tags = [MaterialTag(category=tag, relevance=1.0) for tag in (tags or [topic_title])]
-    material.likes = [MaterialLike(material_id=material.id, user_id=uuid4()) for _ in range(likes)]
     material.chunks = []
     material.topic_links = [MaterialTopicLink(material_id=material.id, topic_id=topic.id, topic=topic)]
     return material
@@ -146,7 +143,6 @@ def test_db_first_retrieval_skips_external_when_internal_coverage_is_sufficient(
             make_material(
                 f"Internal {index}",
                 verified=index == 0,
-                likes=6 - index,
                 source_type=MaterialSourceType.professor_managed,
             ),
             0.82 - (index * 0.03),
@@ -249,8 +245,8 @@ def test_persist_external_results_saves_all_agent_candidates():
 
 def test_loading_saved_topic_results_preserves_ordering():
     topic = make_topic()
-    material_b = make_material("Second item", likes=2)
-    material_a = make_material("First item", verified=True, likes=8, source_type=MaterialSourceType.professor_managed)
+    material_b = make_material("Second item")
+    material_a = make_material("First item", verified=True, source_type=MaterialSourceType.professor_managed)
     search_result = TopicSearchResult(
         id=uuid4(),
         topic_id=topic.id,
@@ -282,12 +278,11 @@ def test_verified_professor_materials_rank_ahead_of_general_materials():
     agent = FakeReviewSearch(SearchMaterialsResponse(topic=topic_text, query_used=topic_text, results=[], search_metadata=SearchMetadata(total_results=0)))
     service = MaterialSearchService(db=db, review_search=agent, default_max_results=5)
 
-    general = make_material("Dynamic Programming Notes", source_type=MaterialSourceType.general_internet, verified=False, likes=0)
+    general = make_material("Dynamic Programming Notes", source_type=MaterialSourceType.general_internet, verified=False)
     professor_verified = make_material(
         "Dynamic Programming Notes",
         source_type=MaterialSourceType.professor_managed,
         verified=True,
-        likes=7,
     )
 
     general_score = service._score_material(general, topic_text)
