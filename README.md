@@ -99,7 +99,7 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 | # | Epic | Status |
 |---|------|--------|
 | 1 | **Auth, roles, topic search bar** | Implemented (login, register, student/professor/admin roles, TopicPage) |
-| 2 | **Material retrieval (internal DB + web fallback)** | Implemented (internal pgvector + Tavilyfallback) |
+| 2 | **Material retrieval (internal DB + web fallback)** | Implemented (internal pgvector + Tavily fallback) |
 | 3 | **Validation & quality assurance** (relevance, retry when validation fails) | Partial — `ReviewAgent` exists but is stubbed/optional |
 | 4 | **Ranking & learning path** (sorting by difficulty, sortable table, explanations) | Partial — scoring exists, but table UI + "why recommended" are missing |
 | 5 | **Problem set aggregator** (Codeforces/LeetCode/AtCoder + general problems) | Implemented |
@@ -114,29 +114,14 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 
 ---
 
-## What is already done vs what still needs work
+## What is already done vs what we would like to add
 
 **Already done:** role-based authentication, agentic Tavily, internal retrieval with pgvector, material validation, problem aggregation, foundational tasks, code review, user feedback, admin verification.
 
-**Still needs refinement:**
+**Future improvements:**
 - Structured orchestrator with retry policies per stage and typed schemas
 - Larger problem dataset
 - Feedback from students to materials
-
----
-
-## Delivery order (recommended in the doc)
-
-1. Auth + profile — **DONE**
-2. Search bar + topic orchestration — **DONE**
-3. Internal retrieval + web fallback — **DONE**
-4. **Validation + ranking** — *this is where we are now*
-5. Results table
-6. Problem aggregation
-7. Foundational tasks
-8. Code editor + review
-9. Review interactions
-10. Admin, trust, scale
 
 ---
 
