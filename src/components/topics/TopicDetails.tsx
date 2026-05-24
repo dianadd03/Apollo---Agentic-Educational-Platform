@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ProblemsSection } from "@/components/problems/ProblemsSection";
@@ -21,6 +22,26 @@ type TopicDetailsProps = {
   problemsLoading: boolean;
   problemsError: string | null;
 };
+
+function FormattedInlineText({ text }: { text: string }) {
+  return <>{formatInlineMarkdown(text)}</>;
+}
+
+function formatInlineMarkdown(text: string): ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, index) => {
+    const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
+    if (boldMatch) {
+      return (
+        <strong key={`${part}-${index}`} className="font-semibold text-[#fff4d8]">
+          {boldMatch[1].trim()}
+        </strong>
+      );
+    }
+
+    return <Fragment key={`${part}-${index}`}>{part}</Fragment>;
+  });
+}
 
 function FutureSection({ title, items, emptyLabel }: { title: string; items: string[]; emptyLabel: string }) {
   return (
@@ -267,7 +288,9 @@ function GeneratedTaskCard({
       <div className="px-5 py-4">
         <div className="rounded-[16px] border border-[#c29f60]/10 bg-[#171920] p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[#b89a68]">Problem statement</p>
-          <p className="mt-2 whitespace-pre-wrap text-base leading-7 text-[#f4ead6]">{task.task}</p>
+          <p className="mt-2 whitespace-pre-wrap text-base leading-7 text-[#f4ead6]">
+            <FormattedInlineText text={task.task} />
+          </p>
         </div>
 
         <div className="mt-4">

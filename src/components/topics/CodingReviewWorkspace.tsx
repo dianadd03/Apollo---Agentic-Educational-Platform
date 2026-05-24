@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, Lightbulb, Sparkles, TestTube2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,26 @@ type ReviewPayload = {
   model: string;
   reviewedAt: string;
 };
+
+function FormattedInlineText({ text }: { text: string }) {
+  return <>{formatInlineMarkdown(text)}</>;
+}
+
+function formatInlineMarkdown(text: string): ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, index) => {
+    const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
+    if (boldMatch) {
+      return (
+        <strong key={`${part}-${index}`} className="font-semibold text-[#fff4d8]">
+          {boldMatch[1].trim()}
+        </strong>
+      );
+    }
+
+    return <Fragment key={`${part}-${index}`}>{part}</Fragment>;
+  });
+}
 
 const REVIEW_SECTION_CONFIG = [
   { id: "critical", title: "Critical issues", heading: "Critical issues (must-fix)", severity: "critical" },
@@ -827,7 +848,9 @@ export function CodingReviewWorkspace({ topicId, tasks, initialTaskId = null }: 
         <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] xl:items-start">
           <div className="rounded-[16px] border border-[#c29f60]/10 bg-[#111318]/70 p-3">
             <p className="text-xs uppercase tracking-[0.16em] text-[#b89a68]">Problem statement</p>
-            <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-[#dccfa6]/82">{selectedTask.statement}</p>
+            <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-[#dccfa6]/82">
+              <FormattedInlineText text={selectedTask.statement} />
+            </p>
           </div>
           <TaskExamplesPanel taskId={selectedTask.id} examples={selectedTask.examples} />
         </div>

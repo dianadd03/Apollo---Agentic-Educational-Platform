@@ -112,6 +112,25 @@ def test_review_code_moves_optional_improvements_to_nice_to_haves():
     app.dependency_overrides.clear()
 
 
+def test_review_code_empty_agent_response_returns_actionable_fallback():
+    agent = FakeCodeReviewAgent("")
+    app.dependency_overrides[get_current_user] = make_user
+    app.dependency_overrides[get_code_review_agent] = lambda: agent
+
+    response = TestClient(app).post(
+        "/api/code-review",
+        json={"task": "Return min coins or -1.", "code": "def f():\n    return 0", "language": "Python"},
+    )
+
+    assert response.status_code == 200
+    review = response.json()["review_markdown"]
+    assert "Suggestion:" in review
+    assert "## Suggested tests (with expected results)" in review
+    assert "Minimum valid input" in review
+    assert "No specific feedback provided" not in review
+    app.dependency_overrides.clear()
+
+
 def test_review_code_rejects_empty_code():
     app.dependency_overrides[get_current_user] = make_user
     app.dependency_overrides[get_code_review_agent] = lambda: FakeCodeReviewAgent()
