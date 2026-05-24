@@ -1,4 +1,4 @@
-from backend.agents.code_review_agent import REQUIRED_SECTIONS, enforce_review_contract
+from backend.agents.code_review_agent import CodeReviewAgent, REQUIRED_SECTIONS, enforce_review_contract
 from backend.schemas.code_review import CodeReviewRequest
 
 
@@ -89,3 +89,47 @@ def test_empty_review_uses_actionable_fallback_with_payload_context():
     assert "Python solution" in review
     assert "Minimum valid input" in review
     assert "No specific feedback provided" not in review
+
+
+def test_review_code_flags_non_code_submission_without_calling_llm():
+    payload = CodeReviewRequest(
+        task="Implement bubble_sort(arr) and return the sorted list.",
+        code="This solution sorts the array by repeatedly swapping adjacent items.",
+        language="Python",
+    )
+    agent = CodeReviewAgent.__new__(CodeReviewAgent)
+
+    review = agent.review_code(payload)
+
+    critical = section_body(review, "Critical issues (must-fix)")
+    assert "does not appear to be actual source code" in critical
+    assert "Suggestion:" in critical
+    assert "## Suggested tests (with expected results)" in review
+
+
+def test_review_code_flags_python_syntax_error_as_critical():
+    payload = CodeReviewRequest(
+        task="Implement bubble_sort(arr) and return the sorted list.",
+        code="def bubble_sort(arr)\n    return arr",
+        language="Python",
+    )
+    agent = CodeReviewAgent.__new__(CodeReviewAgent)
+
+    review = agent.review_code(payload)
+
+    critical = section_body(review, "Critical issues (must-fix)")
+    assert "Line 1:" in critical
+    assert "Python syntax error" in critical
+    assert "Suggestion:" in critical
+
+
+def test_user_prompt_emphasizes_task_statement_as_source_of_truth():
+    payload = make_payload()
+    agent = CodeReviewAgent.__new__(CodeReviewAgent)
+
+    prompt = agent._build_user_prompt(payload)
+
+    assert "source of truth" in prompt
+    assert "Task statement, requirements, and constraints:" in prompt
+    assert "Submitted code:" in prompt
+    assert "Numbered code for line references:" in prompt
