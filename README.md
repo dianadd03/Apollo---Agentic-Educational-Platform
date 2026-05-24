@@ -174,3 +174,47 @@ npm install
 npm run dev
 # deschide http://localhost:5173
 ```
+
+---
+
+## Testing
+
+### Backend unit tests
+
+The backend test suite uses `pytest`, FastAPI `TestClient`, dependency overrides, and fake agents/services. Tests are designed to run without PostgreSQL, Docker, Tavily, OpenAI, Ollama, or internet access.
+
+```bash
+# from the repository root
+.venv/bin/python -m pip install -r backend/requirements.txt
+PYTHONPATH=. .venv/bin/python -m pytest backend/tests
+```
+
+Focused examples:
+
+```bash
+PYTHONPATH=. .venv/bin/python -m pytest backend/tests/test_review_search_adapter.py
+PYTHONPATH=. .venv/bin/python -m pytest backend/tests/test_code_review_contract.py
+PYTHONPATH=. .venv/bin/python -m pytest backend/tests/test_search_routes.py
+```
+
+What is mocked:
+
+- LLM-backed code review and foundational task agents
+- ReviewAgent/web-search responses
+- FastAPI authenticated users via dependency overrides
+- Material search services for route tests
+- Database sessions and query results where service tests do not need a real database
+
+### Frontend tests
+
+This branch includes a zero-dependency frontend utility test using Node's built-in test runner:
+
+```bash
+npm run test:frontend
+```
+
+For React component tests, there is currently no installed component test runner in this branch (`vitest`, Jest, React Testing Library, and jsdom are not present). Add the minimal frontend component test stack before writing `.test.tsx` component tests:
+
+```bash
+npm install --save-dev vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom
+```

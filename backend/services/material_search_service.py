@@ -3,14 +3,14 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Protocol
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Protocol
 from urllib.parse import urlparse
 from uuid import UUID
 
 from sqlalchemy import Select, select
 from sqlalchemy.orm import Session, selectinload
 
-from backend.agents.rag_retrieval_agent import RagRetrievalAgent
 from backend.db.models import (
     Material,
     MaterialSourceType,
@@ -26,6 +26,9 @@ from backend.db.models import (
 )
 from backend.schemas.search_results import CandidateMaterial, SavedSearchResultResponse, SearchMaterialsResponse, SearchMetadata
 from backend.services.material_service import MaterialService
+
+if TYPE_CHECKING:
+    from backend.agents.rag_retrieval_agent import RagRetrievalAgent
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +56,14 @@ class MaterialSearchService:
         db: Session,
         review_search: ReviewSearchLike,
         default_max_results: int,
-        rag_retrieval_agent: RagRetrievalAgent | None = None,
+        rag_retrieval_agent: "RagRetrievalAgent | None" = None,
+        rag_retrieval_agent_factory: Callable[[], "RagRetrievalAgent"] | None = None,
     ) -> None:
         self._db = db
         self._review_search = review_search
         self._default_max_results = default_max_results
         self._rag_retrieval_agent = rag_retrieval_agent
+        self._rag_retrieval_agent_factory = rag_retrieval_agent_factory
         self._material_service = MaterialService(db)
 
     async def search_materials(
@@ -68,8 +73,14 @@ class MaterialSearchService:
         max_results: int | None = None,
     ) -> SearchMaterialsResponse:
         limit = max_results or self._default_max_results
-        if self._rag_retrieval_agent is not None:
-            return await self._search_materials_with_rag(topic=topic, current_user=current_user, max_results=limit)
+        rag_retrieval_agent = self._get_rag_retrieval_agent()
+        if rag_retrieval_agent is not None:
+            return await self._search_materials_with_rag(
+                topic=topic,
+                current_user=current_user,
+                max_results=limit,
+                rag_retrieval_agent=rag_retrieval_agent,
+            )
 
         topic_record = self._get_or_create_topic(topic)
         internal_ranked = self._rank_internal_materials(topic, current_user.id)
@@ -100,9 +111,10 @@ class MaterialSearchService:
         topic: str,
         current_user: User,
         max_results: int,
+        rag_retrieval_agent: "RagRetrievalAgent",
     ) -> SearchMaterialsResponse:
         topic_record = self._get_or_create_topic(topic)
-        response = await self._rag_retrieval_agent.search(topic=topic, max_results=max_results)
+        response = await rag_retrieval_agent.search(topic=topic, max_results=max_results)
         rows = self._ranked_rows_from_rag_response(response, topic_record, current_user)
         search_result = self._save_search_result(
             topic_record,
@@ -114,6 +126,11 @@ class MaterialSearchService:
         response.topic_id = str(topic_record.id)
         response.search_metadata.search_result_id = str(search_result.id)
         return response
+
+    def _get_rag_retrieval_agent(self) -> "RagRetrievalAgent | None":
+        if self._rag_retrieval_agent is None and self._rag_retrieval_agent_factory is not None:
+            self._rag_retrieval_agent = self._rag_retrieval_agent_factory()
+        return self._rag_retrieval_agent
 
     def _ranked_rows_from_rag_response(
         self,

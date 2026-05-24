@@ -4,35 +4,29 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, Header, HTTPException, status
-from sqlalchemy.orm import Session
 
-from backend.agents.extractor_agent import ExtractorAgent
-from backend.agents.problem_aggregator import ProblemAggregatorAgent
-from backend.agents.problem_providers import AtCoderProvider, CodeforcesProvider
-from backend.agents.rag_retrieval_agent import RagRetrievalAgent
 from backend.config import get_settings
-from backend.db.session import SessionLocal
-from backend.services.auth_service import AuthService
-from backend.services.material_search_service import MaterialSearchService
-from backend.services.material_service import MaterialService
-from backend.services.problem_service import ProblemService
-from backend.services.review_search_adapter import ReviewSearchAdapter
-from backend.services.topic_service import TopicService
 
 
 def get_db():
-    db: Session = SessionLocal()
+    from backend.db.session import SessionLocal
+
+    db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
 
-def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
+def get_auth_service(db: Any = Depends(get_db)) -> Any:
+    from backend.services.auth_service import AuthService
+
     return AuthService(db=db)
 
 
-def get_topic_service(db: Session = Depends(get_db)) -> TopicService:
+def get_topic_service(db: Any = Depends(get_db)) -> Any:
+    from backend.services.topic_service import TopicService
+
     return TopicService(db=db)
 
 
@@ -48,27 +42,39 @@ def get_review_agent() -> Any:
     return ReviewAgent()
 
 
-def get_material_service(db: Session = Depends(get_db)) -> MaterialService:
+def get_material_service(db: Any = Depends(get_db)) -> Any:
+    from backend.services.material_service import MaterialService
+
     return MaterialService(db=db)
 
 
-def get_material_search_service(db: Session = Depends(get_db)) -> MaterialSearchService:
+def get_material_search_service(db: Any = Depends(get_db)) -> Any:
+    from backend.services.material_search_service import MaterialSearchService
+    from backend.services.review_search_adapter import ReviewSearchAdapter
+
     settings = get_settings()
     review_search = ReviewSearchAdapter(
-        review_agent=get_review_agent(),
+        review_agent_factory=get_review_agent,
         advanced_search=settings.review_advanced_search,
     )
-    rag_agent = RagRetrievalAgent(db=db, review_search=review_search)
+
+    def build_rag_retrieval_agent() -> Any:
+        from backend.agents.rag_retrieval_agent import RagRetrievalAgent
+
+        return RagRetrievalAgent(db=db, review_search=review_search)
+
     return MaterialSearchService(
         db=db,
         review_search=review_search,
         default_max_results=settings.max_results,
-        rag_retrieval_agent=rag_agent,
+        rag_retrieval_agent_factory=build_rag_retrieval_agent,
     )
 
 
 @lru_cache(maxsize=1)
-def get_extractor_agent() -> ExtractorAgent:
+def get_extractor_agent() -> Any:
+    from backend.agents.extractor_agent import ExtractorAgent
+
     return ExtractorAgent()
 
 
@@ -87,7 +93,10 @@ def get_code_review_agent():
 
 
 @lru_cache(maxsize=1)
-def get_problem_aggregator() -> ProblemAggregatorAgent:
+def get_problem_aggregator() -> Any:
+    from backend.agents.problem_aggregator import ProblemAggregatorAgent
+    from backend.agents.problem_providers import AtCoderProvider, CodeforcesProvider
+
     settings = get_settings()
     providers = [CodeforcesProvider(), AtCoderProvider()]
     return ProblemAggregatorAgent(
@@ -99,7 +108,9 @@ def get_problem_aggregator() -> ProblemAggregatorAgent:
     )
 
 
-def get_problem_service(db: Session = Depends(get_db)) -> ProblemService:
+def get_problem_service(db: Any = Depends(get_db)) -> Any:
+    from backend.services.problem_service import ProblemService
+
     settings = get_settings()
     return ProblemService(
         db=db,
@@ -112,7 +123,7 @@ def get_problem_service(db: Session = Depends(get_db)) -> ProblemService:
 
 def get_current_user(
     authorization: str | None = Header(default=None),
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: Any = Depends(get_auth_service),
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
