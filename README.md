@@ -27,7 +27,7 @@ Educational platform where students and professors **search for a technical topi
 
 ## What the platform does
 
-1. **Students** → create *Topics* (with level: beginner/intermediate/advanced) and search for materials through AI; they receive scored results (quality + ease of understanding)
+1. **Students** → create *Topics* and search for materials through AI; they receive scored results (quality + ease of understanding)
 2. **Professors/Admins** → upload materials (PDFs, links), verify, publish/unpublish
 3. **Agent search** → `ReviewAgent` uses `WebAgent` for Tavily (web, YouTube, archive.org, papers) and scores materials from 0–100 for quality and accessibility → everything is persisted in the DB with provenance
 
@@ -99,7 +99,7 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 | # | Epic | Status |
 |---|------|--------|
 | 1 | **Auth, roles, topic search bar** | Implemented (login, register, student/professor/admin roles, TopicPage) |
-| 2 | **Material retrieval (internal DB + web fallback)** | Implemented (internal pgvector + Tavily/DuckDuckGo fallback) |
+| 2 | **Material retrieval (internal DB + web fallback)** | Implemented (internal pgvector + Tavilyfallback) |
 | 3 | **Validation & quality assurance** (relevance, retry when validation fails) | Partial — `ReviewAgent` exists but is stubbed/optional |
 | 4 | **Ranking & learning path** (sorting by difficulty, sortable table, explanations) | Partial — scoring exists, but table UI + "why recommended" are missing |
 | 5 | **Problem set aggregator** (Codeforces/LeetCode/AtCoder + general problems) | Implemented |
