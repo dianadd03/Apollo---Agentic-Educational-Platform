@@ -1,4 +1,23 @@
-export LANGSMITH_TRACING=true
-export LANGSMITH_ENDPOINT=https://api.smith.langchain.com
-export LANGSMITH_API_KEY=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
-export LANGSMITH_PROJECT="Apollo"
+if [ -f .env ]; then
+  set -a
+  . ./.env
+  set +a
+elif [ -f ../.env ]; then
+  set -a
+  . ../.env
+  set +a
+elif [ -f ../../.env ]; then
+  set -a
+  . ../../.env
+  set +a
+fi
+
+export LANGSMITH_TRACING="${LANGSMITH_TRACING:-true}"
+export LANGSMITH_ENDPOINT="${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}"
+export LANGSMITH_PROJECT="${LANGSMITH_PROJECT:-Apollo}"
+
+if [ -n "$LANGSMITH_API_KEY" ]; then
+  export LANGSMITH_API_KEY
+else
+  echo "LANGSMITH_API_KEY is not set. Add it to .env before enabling LangSmith tracing." >&2
+fi
