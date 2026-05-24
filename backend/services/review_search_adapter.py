@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from backend.schemas.search_results import CandidateMaterial, SearchMaterialsResponse, SearchMetadata
@@ -12,14 +13,20 @@ REVIEW_SEARCH_TIMEOUT_SECONDS = 45
 
 
 class ReviewSearchAdapter:
-    def __init__(self, review_agent: Any, advanced_search: bool = False) -> None:
+    def __init__(
+        self,
+        review_agent: Any | None = None,
+        advanced_search: bool = False,
+        review_agent_factory: Callable[[], Any] | None = None,
+    ) -> None:
         self._review_agent = review_agent
+        self._review_agent_factory = review_agent_factory
         self._advanced_search = advanced_search
 
     async def search_topic(self, topic: str, max_results: int) -> SearchMaterialsResponse:
         try:
             reviews = await asyncio.wait_for(
-                asyncio.to_thread(self._review_agent.review, topic, advanced=self._advanced_search),
+                asyncio.to_thread(self._get_review_agent().review, topic, advanced=self._advanced_search),
                 timeout=REVIEW_SEARCH_TIMEOUT_SECONDS,
             )
         except TimeoutError:
@@ -98,3 +105,10 @@ class ReviewSearchAdapter:
         if ease_score >= 35:
             return "advanced"
         return "expert"
+
+    def _get_review_agent(self) -> Any:
+        if self._review_agent is None:
+            if self._review_agent_factory is None:
+                raise RuntimeError("Review agent is not configured.")
+            self._review_agent = self._review_agent_factory()
+        return self._review_agent
