@@ -105,11 +105,21 @@ const FALLBACK_TASKS: MockTask[] = [
   }
   return dp[target];
 }`,
-      cpp: `void solve() {
-    // Implement your solution here.
+      cpp: `int minCoins(vector<int>& coins, int target) {
+    vector<int> dp(target + 1, 0);
+    for (int amount = 1; amount <= target; amount++) {
+        int best = 1e9;
+        for (int coin : coins) {
+            if (amount - coin >= 0) {
+                best = min(best, dp[amount - coin] + 1);
+            }
+        }
+        dp[amount] = best;
+    }
+    return dp[target];
 }`,
-      java: `public void solve() {
-    // Implement your solution here.
+      java: `public int minCoins(int[] coins, int target) {
+    return -1;
 }`,
     },
   },
@@ -800,18 +810,6 @@ export function CodingReviewWorkspace({ topicId, tasks, initialTaskId = null }: 
       setReviewing(false);
     }
   };
-
-  if (!selectedTask) {
-    return (
-      <Card className="rounded-[24px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#171920,#13151b)] p-6">
-        <p className="text-xs uppercase tracking-[0.2em] text-[#b89a68]">Task workspace</p>
-        <h3 className="mt-1.5 text-xl font-semibold text-[#f4ead6]">No coding tasks available</h3>
-        <p className="mt-2 text-sm leading-6 text-[#dccfa6]/72">
-          Generated or saved topic tasks will appear here when they are available.
-        </p>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-3">
