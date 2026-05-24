@@ -71,8 +71,8 @@ export function ManagedMaterialsPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-[#a3835b]">Trusted collection</p>
-              <h2 className="mt-2 text-4xl font-semibold tracking-tight text-[#f4ead6] font-serif">Open and manage internal materials.</h2>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-[#dccfa6]/80">
+              <h2 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--section-title-color)] font-serif">Open and manage internal materials.</h2>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--library-copy-color)]">
                 Review professor/admin managed materials, confirm verification, and deactivate low-quality entries without leaving the app.
               </p>
             </div>
@@ -87,13 +87,13 @@ export function ManagedMaterialsPage() {
 
         <Card className="overflow-hidden">
           {loading ? (
-            <div className="p-8 text-sm text-[#dccfa6]/70">Loading managed materials...</div>
+            <div className="p-8 text-sm text-[var(--library-copy-color)]">Loading managed materials...</div>
           ) : materials.length === 0 ? (
-            <div className="p-8 text-sm text-[#dccfa6]/70">No professor/admin managed materials are available yet.</div>
+            <div className="p-8 text-sm text-[var(--library-copy-color)]">No professor/admin managed materials are available yet.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-[#161820] text-[#dccfa6]/70">
+                <thead className="bg-[var(--table-header-bg)] text-[var(--table-header-text)]">
                   <tr>
                     <th className="px-5 py-4 font-medium">Material</th>
                     <th className="px-5 py-4 font-medium">Topics</th>
@@ -109,12 +109,12 @@ export function ManagedMaterialsPage() {
                     return (
                       <tr key={material.id} className="border-t border-[#c29f60]/10 align-top">
                         <td className="px-5 py-4">
-                          <div className="font-semibold text-[#f4ead6]">{material.canonical_name}</div>
-                          <div className="mt-2 text-xs text-[#dccfa6]/60 break-all">{openTarget || "No location"}</div>
-                          {material.summary ? <div className="mt-2 text-sm text-[#dccfa6]/70">{material.summary}</div> : null}
+                          <div className="font-semibold text-[var(--foreground)]">{material.canonical_name}</div>
+                          <div className="mt-2 text-xs text-[var(--library-copy-color)] break-all">{openTarget || "No location"}</div>
+                          {material.summary ? <div className="mt-2 text-sm text-[var(--library-copy-color)]">{material.summary}</div> : null}
                         </td>
-                        <td className="px-5 py-4 text-[#dccfa6]/75">{material.topics.map((topic) => topic.title).join(", ") || "Unassigned"}</td>
-                        <td className="px-5 py-4 text-[#dccfa6]/75">{material.material_type}</td>
+                        <td className="px-5 py-4 text-[var(--library-copy-color)]">{material.topics.map((topic) => topic.title).join(", ") || "Unassigned"}</td>
+                        <td className="px-5 py-4 text-[var(--library-copy-color)]">{material.material_type}</td>
                         <td className="px-5 py-4">
                           <div className="space-y-2 text-xs">
                             <div className={material.is_verified ? "text-emerald-300" : "text-amber-300"}>
@@ -125,7 +125,7 @@ export function ManagedMaterialsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-5 py-4 text-[#dccfa6]/75">{material.source_type}</td>
+                        <td className="px-5 py-4 text-[var(--library-copy-color)]">{material.source_type}</td>
                         <td className="px-5 py-4">
                           <div className="flex flex-wrap gap-2">
                             <a href={openTarget || "#"} target="_blank" rel="noreferrer">

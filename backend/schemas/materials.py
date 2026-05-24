@@ -93,15 +93,7 @@ class MaterialResponse(BaseModel):
     is_published: bool
     is_active: bool
     is_verified: bool
-    like_count: int = 0
-    user_has_liked: bool = False
     tags: list[str] = Field(default_factory=list)
     topics: list[TopicSummary] = Field(default_factory=list)
     created_at: datetime | None = None
     updated_at: datetime | None = None
-
-
-class MaterialLikeResponse(BaseModel):
-    material_id: str
-    like_count: int
-    user_has_liked: bool

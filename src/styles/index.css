@@ -137,6 +137,11 @@
   --topic-heading-color: #f7f0df;
   --topic-copy-color: #dccfa6;
   --topic-pill-text: #ecdfbf;
+  --code-line-highlight: rgba(245, 158, 11, 0.18);
+  --code-line-highlight-border: rgba(251, 191, 36, 0.28);
+  --review-item-bg: #171920;
+  --review-item-hover-bg: #1e211e;
+  --review-suggestion-bg: #0c0e13;
 }
 
 .light {
@@ -276,6 +281,11 @@
   --topic-heading-color: #2e2a24;
   --topic-copy-color: #5c4e3b;
   --topic-pill-text: #5c4e3b;
+  --code-line-highlight: rgba(245, 158, 11, 0.2);
+  --code-line-highlight-border: rgba(180, 120, 33, 0.32);
+  --review-item-bg: #fbf8f1;
+  --review-item-hover-bg: #f3eadb;
+  --review-suggestion-bg: #fffdf8;
 
   --bookshelf-plank-bg: linear-gradient(180deg, #eadfca 0%, #d8c8aa 100%);
   --bookshelf-plank-border: #c1aa80;
@@ -378,5 +388,47 @@
     border-color: var(--bookshelf-rail-border, #65452d);
     box-shadow: var(--bookshelf-rail-shadow, 0 8px 16px rgba(0,0,0,0.5));
     @apply absolute inset-x-6 bottom-0 h-4 rounded-b-[12px] border-t;
+  }
+
+  .theme-accent-text {
+    color: #a3835b;
+  }
+
+  .theme-heading {
+    color: var(--topic-heading-color);
+  }
+
+  .theme-title {
+    color: var(--topic-title-color);
+  }
+
+  .theme-copy {
+    color: var(--topic-copy-color);
+  }
+
+  .theme-panel {
+    background: var(--topic-panel-bg);
+    border-color: var(--glass-border);
+  }
+
+  .theme-surface {
+    background: var(--topic-surface-bg);
+    border-color: var(--subtle-border);
+  }
+
+  .theme-card {
+    background: var(--topic-card-bg);
+    border-color: var(--subtle-border);
+  }
+
+  .theme-code {
+    background: var(--topic-code-bg);
+    color: var(--topic-heading-color);
+  }
+
+  .theme-input {
+    background: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--btn-secondary-border);
   }
 }

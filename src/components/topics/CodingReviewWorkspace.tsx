@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, Lightbulb, Sparkles, TestTube2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ function formatInlineMarkdown(text: string): ReactNode[] {
     const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
     if (boldMatch) {
       return (
-        <strong key={`${part}-${index}`} className="font-semibold text-[#fff4d8]">
+        <strong key={`${part}-${index}`} className="font-semibold text-[var(--topic-heading-color)]">
           {boldMatch[1].trim()}
         </strong>
       );
@@ -278,52 +278,111 @@ function EditorSurface({
   hoveredRange: LineRange | null;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const overlayRef = useRef<HTMLPreElement | null>(null);
-  const lines = code.split("\n");
+  const gutterRef = useRef<HTMLDivElement | null>(null);
+  const lineHeight = 28;
+  const lines = code.length ? code.split("\n") : [""];
+  const highlightTop = hoveredRange ? (hoveredRange.lineStart - 1) * lineHeight + 14 : 0;
+  const highlightHeight = hoveredRange ? (hoveredRange.lineEnd - hoveredRange.lineStart + 1) * lineHeight : 0;
+
+  const handleTabKey = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== "Tab") return;
+    event.preventDefault();
+
+    const textarea = event.currentTarget;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const tabText = "    ";
+
+    if (start === end) {
+      const updated = `${code.slice(0, start)}${tabText}${code.slice(end)}`;
+      onChange(updated);
+      window.requestAnimationFrame(() => {
+        textarea.selectionStart = start + tabText.length;
+        textarea.selectionEnd = start + tabText.length;
+      });
+      return;
+    }
+
+    const lineStart = code.lastIndexOf("\n", start - 1) + 1;
+    const lineEnd = code.indexOf("\n", end);
+    const selectionEnd = lineEnd === -1 ? code.length : lineEnd;
+    const selectedText = code.slice(lineStart, selectionEnd);
+    const selectedLines = selectedText.split("\n");
+
+    if (event.shiftKey) {
+      let removedBeforeSelection = 0;
+      let removedTotal = 0;
+      const unindented = selectedLines
+        .map((line, index) => {
+          const removed = line.startsWith(tabText) ? tabText.length : line.startsWith("\t") ? 1 : 0;
+          if (index === 0) removedBeforeSelection = removed;
+          removedTotal += removed;
+          return removed ? line.slice(removed) : line;
+        })
+        .join("\n");
+      onChange(`${code.slice(0, lineStart)}${unindented}${code.slice(selectionEnd)}`);
+      window.requestAnimationFrame(() => {
+        textarea.selectionStart = Math.max(lineStart, start - removedBeforeSelection);
+        textarea.selectionEnd = Math.max(textarea.selectionStart, end - removedTotal);
+      });
+      return;
+    }
+
+    const indented = selectedLines.map((line) => `${tabText}${line}`).join("\n");
+    onChange(`${code.slice(0, lineStart)}${indented}${code.slice(selectionEnd)}`);
+    window.requestAnimationFrame(() => {
+      textarea.selectionStart = start + tabText.length;
+      textarea.selectionEnd = end + selectedLines.length * tabText.length;
+    });
+  };
 
   return (
-    <Card className="overflow-hidden rounded-[28px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#171920,#12141a)] p-0">
+    <Card className="theme-panel overflow-hidden rounded-[28px] p-0">
       <div className="flex items-center justify-between border-b border-[#c29f60]/10 px-4 py-2.5">
-        <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-[#b89a68]">
+        <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] theme-accent-text">
           <span>Editor</span>
           <span className="h-1 w-1 rounded-full bg-[#c29f60]/40" />
           <span>{language}</span>
         </div>
-        <p className="text-xs text-[#dccfa6]/62">Draft is saved locally while you type.</p>
+        <p className="text-xs text-[var(--topic-copy-color)]">Draft is saved locally while you type.</p>
       </div>
-      <div className="relative min-h-[440px] bg-[#111318]">
-        <pre
-          ref={overlayRef}
+      <div className="relative min-h-[440px] overflow-hidden bg-[var(--editor-bg)]">
+        {hoveredRange ? (
+          <div
+            className="pointer-events-none absolute left-[56px] right-3 rounded-lg border transition-all"
+            style={{
+              top: `${highlightTop}px`,
+              height: `${highlightHeight}px`,
+              backgroundColor: "var(--code-line-highlight)",
+              borderColor: "var(--code-line-highlight-border)",
+            }}
+          />
+        ) : null}
+        <div
+          ref={gutterRef}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 overflow-auto whitespace-pre px-4 py-3.5 font-mono text-sm leading-7 text-[#f3ead2]"
+          className="pointer-events-none absolute inset-y-0 left-0 w-[56px] overflow-hidden border-r border-[var(--subtle-border)] bg-[var(--editor-gutter-bg)] px-3 py-3.5 text-right font-mono text-sm text-[var(--editor-gutter-text)]"
         >
-          {lines.map((line, index) => {
-            const lineNumber = index + 1;
-            const highlighted = hoveredRange ? lineInRange(lineNumber, hoveredRange) : false;
-            return (
-              <div
-                key={`overlay-${lineNumber}`}
-                className={`grid grid-cols-[44px_minmax(0,1fr)] rounded-md ${highlighted ? "bg-amber-500/20 ring-1 ring-amber-400/30" : ""}`}
-              >
-                <span className="pr-3 text-right text-[#6d7485]">{lineNumber}</span>
-                <span dangerouslySetInnerHTML={{ __html: highlightLine(line || " ", language) }} />
-              </div>
-            );
-          })}
-        </pre>
+          {lines.map((_, index) => (
+            <div key={`gutter-${index}`} style={{ lineHeight: `${lineHeight}px` }}>
+              {index + 1}
+            </div>
+          ))}
+        </div>
         <textarea
           ref={textareaRef}
           value={code}
           onChange={(event) => onChange(event.target.value)}
+          onKeyDown={handleTabKey}
           onScroll={(event) => {
-            if (overlayRef.current) {
-              overlayRef.current.scrollTop = event.currentTarget.scrollTop;
-              overlayRef.current.scrollLeft = event.currentTarget.scrollLeft;
+            if (gutterRef.current) {
+              gutterRef.current.scrollTop = event.currentTarget.scrollTop;
             }
           }}
           spellCheck={false}
           wrap="off"
-          className="relative z-10 h-[440px] w-full resize-none overflow-auto whitespace-pre bg-transparent pr-4 pl-[60px] py-3.5 font-mono text-sm leading-7 text-transparent caret-[#f4ead6] outline-none selection:bg-[#c29f60]/30"
+          className="relative z-10 h-[440px] w-full resize-none overflow-auto whitespace-pre bg-transparent pr-4 pl-[72px] py-3.5 font-mono text-sm text-[var(--editor-text)] caret-[var(--editor-caret)] outline-none selection:bg-[#c29f60]/30"
+          style={{ lineHeight: `${lineHeight}px`, tabSize: 4 }}
         />
       </div>
     </Card>
@@ -338,9 +397,9 @@ function TaskExamplesPanel({
   examples: GeneratedFoundationalTask["examples"];
 }) {
   return (
-    <div className="rounded-[16px] border border-[#c29f60]/10 bg-[#111318]/70 p-3">
+    <div className="theme-card rounded-[16px] border p-3">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs uppercase tracking-[0.16em] text-[#b89a68]">Test examples</p>
+        <p className="text-xs uppercase tracking-[0.16em] theme-accent-text">Test examples</p>
         <Badge tone={examples.length ? "success" : "default"} className="px-2 py-0.5 text-[10px]">
           {examples.length || 0}
         </Badge>
@@ -348,17 +407,17 @@ function TaskExamplesPanel({
       {examples.length ? (
         <div className="mt-3 space-y-2">
           {examples.slice(0, 3).map((example, index) => (
-            <div key={`${taskId}-example-${index}`} className="rounded-[14px] border border-[#c29f60]/10 bg-[#0f1117] p-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#b89a68]">Example {index + 1}</p>
-              <div className="mt-2 grid gap-2 text-xs leading-5 text-[#f4ead6]">
-                <pre className="max-h-28 overflow-auto whitespace-pre-wrap rounded-[10px] bg-[#0b0d12] p-2"><span className="text-[#a3835b]">Input: </span>{example.input}</pre>
-                <pre className="max-h-28 overflow-auto whitespace-pre-wrap rounded-[10px] bg-[#0b0d12] p-2"><span className="text-[#a3835b]">Output: </span>{example.output}</pre>
+            <div key={`${taskId}-example-${index}`} className="theme-surface rounded-[14px] border p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] theme-accent-text">Example {index + 1}</p>
+              <div className="mt-2 grid gap-2 text-xs leading-5 text-[var(--topic-heading-color)]">
+                <pre className="theme-code max-h-28 overflow-auto whitespace-pre-wrap rounded-[10px] p-2"><span className="theme-accent-text">Input: </span>{example.input}</pre>
+                <pre className="theme-code max-h-28 overflow-auto whitespace-pre-wrap rounded-[10px] p-2"><span className="theme-accent-text">Output: </span>{example.output}</pre>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <p className="mt-3 text-sm leading-6 text-[#dccfa6]/70">No examples were provided for this task.</p>
+        <p className="mt-3 text-sm leading-6 text-[var(--topic-copy-color)]">No examples were provided for this task.</p>
       )}
     </div>
   );
@@ -381,11 +440,11 @@ function ReviewPanel({
   const hasVisibleFeedback = structuredReview ? reviewHasVisibleFeedback(structuredReview) : false;
 
   return (
-    <Card className="rounded-[28px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#171920,#13151b)] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.18)] xl:sticky xl:top-4">
+    <Card className="theme-panel rounded-[28px] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.18)] xl:sticky xl:top-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[#b89a68]">AI Review</p>
-          <h3 className="mt-1.5 text-xl font-semibold text-[#f4ead6]">Code Review</h3>
+          <p className="text-xs uppercase tracking-[0.2em] theme-accent-text">AI Review</p>
+          <h3 className="mt-1.5 text-xl font-semibold text-[var(--topic-heading-color)]">Code Review</h3>
         </div>
         {review ? <Badge tone={stale ? "warning" : "success"}>{stale ? "Feedback may be stale" : "Current review"}</Badge> : null}
       </div>
@@ -395,10 +454,10 @@ function ReviewPanel({
       ) : null}
 
       {!review ? (
-        <p className="mt-4 text-sm leading-6 text-[#dccfa6]/72">Submit code to receive categorized feedback for critical issues, improvements, nice-to-haves, and tests.</p>
+        <p className="mt-4 text-sm leading-6 text-[var(--topic-copy-color)]">Submit code to receive categorized feedback for critical issues, improvements, nice-to-haves, and tests.</p>
       ) : (
         <div className="mt-4 max-h-[620px] space-y-3 overflow-y-auto pr-1">
-          <div className="text-xs text-[#cdb58a]/72">Reviewed {new Date(review.reviewedAt).toLocaleString()}</div>
+          <div className="text-xs text-[var(--topic-copy-color)]">Reviewed {new Date(review.reviewedAt).toLocaleString()}</div>
           {structuredReview?.sections.map((section) => (
             <ReviewSectionCard
               key={section.id}
@@ -422,13 +481,13 @@ function RawReviewCard({ markdown }: { markdown: string }) {
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-amber-300/45 bg-amber-950/45 text-amber-100">
             <Lightbulb className="h-4 w-4" />
           </span>
-          <h4 className="text-base font-semibold text-[#f4ead6]">Agent feedback</h4>
+          <h4 className="text-base font-semibold text-[var(--topic-heading-color)]">Agent feedback</h4>
         </div>
         <Badge tone="warning" className="shrink-0 px-2 py-0.5 text-[10px] tracking-[0.12em]">
           Raw
         </Badge>
       </div>
-      <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap rounded-[16px] border border-[#c29f60]/10 bg-[#171920] px-3.5 py-3 text-sm leading-6 text-[#dccfa6]/82">
+      <pre className="theme-code mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap rounded-[16px] border border-[var(--subtle-border)] px-3.5 py-3 text-sm leading-6">
         {markdown || "The reviewer returned an empty response."}
       </pre>
     </section>
@@ -446,14 +505,14 @@ function ReviewSectionCard({
 }) {
   const tone = reviewSeverityTone(section.severity);
   return (
-    <section className={`relative overflow-hidden rounded-[20px] border border-l-[6px] bg-[#111318]/72 p-3.5 shadow-[0_10px_32px_rgba(0,0,0,0.14)] ${tone.card}`}>
+    <section className={`relative overflow-hidden rounded-[20px] border border-l-[6px] p-3.5 shadow-[0_10px_32px_rgba(0,0,0,0.14)] ${tone.card}`}>
       <div className={`pointer-events-none absolute inset-x-0 top-0 h-[3px] ${tone.accent}`} />
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${tone.iconWrap}`}>
             {reviewSeverityIcon(section.severity)}
           </span>
-          <h4 className="text-base font-semibold text-[#f4ead6]">{section.title}</h4>
+          <h4 className="text-base font-semibold text-[var(--topic-heading-color)]">{section.title}</h4>
         </div>
         <Badge tone={tone.badgeTone} className="shrink-0 px-2 py-0.5 text-[10px] tracking-[0.12em]">
           {tone.label}
@@ -487,16 +546,16 @@ function ReviewTestItem({ issue, index }: { issue: StructuredReviewIssue; index:
   const compactTitle = stripMarkdown(text.replace(/\b(Input|Output|Expected)\s*:\s*[^.;]+[.;]?/gi, "").trim()) || issue.title;
 
   return (
-    <div className="rounded-[14px] border border-emerald-300/18 bg-[#0f1117] p-3">
+    <div className="theme-surface rounded-[14px] border p-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-100">Test {index + 1}</p>
         {issue.lineStart ? <span className="text-[11px] text-emerald-100/70">{formatLineRange({ lineStart: issue.lineStart, lineEnd: issue.lineEnd ?? issue.lineStart })}</span> : null}
       </div>
-      <p className="mt-2 text-sm leading-6 text-[#f4ead6]">{compactTitle}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--topic-heading-color)]">{compactTitle}</p>
       {input || output ? (
-        <div className="mt-2 grid gap-2 text-xs leading-5 text-[#f4ead6]">
-          {input ? <pre className="max-h-28 overflow-auto whitespace-pre-wrap rounded-[10px] bg-[#0b0d12] p-2"><span className="text-emerald-200/80">Input: </span>{input}</pre> : null}
-          {output ? <pre className="max-h-28 overflow-auto whitespace-pre-wrap rounded-[10px] bg-[#0b0d12] p-2"><span className="text-emerald-200/80">Expected: </span>{output}</pre> : null}
+        <div className="mt-2 grid gap-2 text-xs leading-5 text-[var(--topic-heading-color)]">
+          {input ? <pre className="theme-code max-h-28 overflow-auto whitespace-pre-wrap rounded-[10px] p-2"><span className="text-emerald-600">Input: </span>{input}</pre> : null}
+          {output ? <pre className="theme-code max-h-28 overflow-auto whitespace-pre-wrap rounded-[10px] p-2"><span className="text-emerald-600">Expected: </span>{output}</pre> : null}
         </div>
       ) : null}
     </div>
@@ -519,20 +578,20 @@ function ReviewIssueItem({
   const content = (
     <>
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <p className="min-w-0 flex-1 text-sm font-semibold leading-5 text-[#f4ead6]">{issue.title}</p>
+        <p className="min-w-0 flex-1 text-sm font-semibold leading-5 text-[var(--topic-heading-color)]">{issue.title}</p>
         {range ? (
           <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${tone.lineBadge}`}>
             {formatLineRange(range)}
           </span>
         ) : null}
       </div>
-      {issue.explanation ? <p className="mt-1.5 text-sm leading-6 text-[#dccfa6]/78">{issue.explanation}</p> : null}
+      {issue.explanation ? <p className="mt-1.5 text-sm leading-6 text-[var(--topic-copy-color)]">{issue.explanation}</p> : null}
       {!issue.explanation && !issue.suggestion && issue.rawText !== issue.title ? (
-        <p className="mt-1.5 text-sm leading-6 text-[#dccfa6]/78">{issue.rawText}</p>
+        <p className="mt-1.5 text-sm leading-6 text-[var(--topic-copy-color)]">{issue.rawText}</p>
       ) : null}
       {issue.suggestion ? (
-        <div className="mt-2 rounded-[12px] border border-[#c29f60]/10 bg-[#0c0e13] px-3 py-2 text-sm leading-6 text-[#e7d8b8]">
-          <span className="font-semibold text-[#f4ead6]">Suggested fix: </span>
+        <div className="mt-2 rounded-[12px] border border-[var(--subtle-border)] bg-[var(--review-suggestion-bg)] px-3 py-2 text-sm leading-6 text-[var(--topic-copy-color)]">
+          <span className="font-semibold text-[var(--topic-heading-color)]">Suggested fix: </span>
           {issue.suggestion}
         </div>
       ) : null}
@@ -540,7 +599,7 @@ function ReviewIssueItem({
   );
 
   if (!range) {
-    return <div className="rounded-[16px] border border-[#c29f60]/10 bg-[#171920] px-3.5 py-3">{content}</div>;
+    return <div className="rounded-[16px] border border-[var(--subtle-border)] bg-[var(--review-item-bg)] px-3.5 py-3">{content}</div>;
   }
 
   return (
@@ -550,7 +609,7 @@ function ReviewIssueItem({
       onFocus={() => onHoverRange(range)}
       onMouseLeave={onLeaveRange}
       onBlur={onLeaveRange}
-      className="w-full cursor-pointer rounded-[16px] border border-[#c29f60]/10 bg-[#171920] px-3.5 py-3 text-left transition hover:border-amber-400/25 hover:bg-[#1e211e] focus:border-amber-400/35 focus:bg-[#1e211e] focus:outline-none"
+      className="w-full cursor-pointer rounded-[16px] border border-[var(--subtle-border)] bg-[var(--review-item-bg)] px-3.5 py-3 text-left transition hover:border-amber-400/25 hover:bg-[var(--review-item-hover-bg)] focus:border-amber-400/35 focus:bg-[var(--review-item-hover-bg)] focus:outline-none"
     >
       {content}
     </button>
@@ -834,11 +893,11 @@ export function CodingReviewWorkspace({ topicId, tasks, initialTaskId = null }: 
 
   return (
     <div className="space-y-3">
-      <Card className="rounded-[24px] border-[#c29f60]/14 bg-[linear-gradient(180deg,#171920,#13151b)] p-4">
+    <Card className="theme-panel rounded-[24px] p-4">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#b89a68]">{selectedTask.kind}</p>
-            <h3 className="mt-1.5 text-xl font-semibold text-[#f4ead6]">{selectedTask.title}</h3>
+            <p className="text-xs uppercase tracking-[0.2em] theme-accent-text">{selectedTask.kind}</p>
+            <h3 className="mt-1.5 text-xl font-semibold text-[var(--topic-heading-color)]">{selectedTask.title}</h3>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2 xl:justify-end">
             <Badge tone="info">{reviewCount} sections</Badge>
@@ -846,9 +905,9 @@ export function CodingReviewWorkspace({ topicId, tasks, initialTaskId = null }: 
           </div>
         </div>
         <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] xl:items-start">
-          <div className="rounded-[16px] border border-[#c29f60]/10 bg-[#111318]/70 p-3">
-            <p className="text-xs uppercase tracking-[0.16em] text-[#b89a68]">Problem statement</p>
-            <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-[#dccfa6]/82">
+          <div className="theme-card rounded-[16px] border p-3">
+            <p className="text-xs uppercase tracking-[0.16em] theme-accent-text">Problem statement</p>
+            <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-[var(--topic-copy-color)]">
               <FormattedInlineText text={selectedTask.statement} />
             </p>
           </div>
@@ -856,12 +915,12 @@ export function CodingReviewWorkspace({ topicId, tasks, initialTaskId = null }: 
         </div>
         <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div className="flex flex-wrap items-end gap-3">
-            <label className="text-xs uppercase tracking-[0.18em] text-[#b89a68] shrink-0">
+            <label className="text-xs uppercase tracking-[0.18em] theme-accent-text shrink-0">
               Language
               <select
                 value={language}
                 onChange={(event) => setLanguage(event.target.value as SupportedLanguage)}
-                className="mt-1.5 block rounded-2xl border border-[#c29f60]/16 bg-[#111318] px-4 py-2.5 text-sm text-[#f4ead6] outline-none"
+                className="theme-input mt-1.5 block rounded-2xl border px-4 py-2.5 text-sm outline-none"
               >
                 {LANGUAGES.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -873,7 +932,7 @@ export function CodingReviewWorkspace({ topicId, tasks, initialTaskId = null }: 
             <Button
               variant="secondary"
               disabled={unsupportedLanguage || reviewing}
-              className="rounded-full border-[#c29f60]/18 bg-[#1a1d24] text-[#f4ead6] hover:bg-[#21252e] disabled:opacity-50"
+              className="rounded-full disabled:opacity-50"
               onClick={submitReview}
             >
               <Sparkles className="mr-2 h-4 w-4" />
@@ -885,7 +944,7 @@ export function CodingReviewWorkspace({ topicId, tasks, initialTaskId = null }: 
           <Badge tone={unsupportedLanguage ? "warning" : reviewing ? "info" : review ? "success" : "default"}>
             {unsupportedLanguage ? "Unsupported language" : reviewing ? "Review in progress" : review ? "Review ready" : "Awaiting submission"}
           </Badge>
-          <span className="text-sm leading-5 text-[#dccfa6]/70 xl:text-right">
+          <span className="text-sm leading-5 text-[var(--topic-copy-color)] xl:text-right">
             {unsupportedLanguage
               ? "Select a supported language to submit this review."
               : reviewing

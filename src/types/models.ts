@@ -35,8 +35,6 @@ export type SearchResult = {
   reason_for_inclusion: string;
   confidence: number;
   score?: number | null;
-  like_count?: number;
-  user_has_liked?: boolean;
   is_verified?: boolean;
   is_internal?: boolean;
   source_of_result?: string;
@@ -111,8 +109,6 @@ export type UploadedMaterialResponse = {
   is_published: boolean;
   is_active: boolean;
   is_verified: boolean;
-  like_count: number;
-  user_has_liked: boolean;
   tags: string[];
   topics: Array<{ id: string; title: string; slug: string }>;
   created_at?: string | null;

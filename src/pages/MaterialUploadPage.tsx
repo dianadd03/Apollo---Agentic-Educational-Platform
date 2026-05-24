@@ -129,7 +129,7 @@ export function MaterialUploadPage() {
   const FieldLabel = ({ label, help }: { label: string; help: string }) => (
     <label className="space-y-1">
       <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-[#c29f60]">{label}</span>
-      <span className="block text-xs leading-5 text-[#dccfa6]/65">{help}</span>
+      <span className="block text-xs leading-5 text-[var(--library-copy-color)]">{help}</span>
     </label>
   );
 
@@ -213,8 +213,8 @@ export function MaterialUploadPage() {
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-[#a3835b]">Trusted ingestion</p>
-              <h2 className="mt-2 text-4xl font-semibold tracking-tight text-[#f4ead6] font-serif">Upload internal learning materials for Apollo’s DB-first retrieval.</h2>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-[#dccfa6]/80">
+              <h2 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--section-title-color)] font-serif">Upload internal learning materials for Apollo’s DB-first retrieval.</h2>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--library-copy-color)]">
                 Uploaded files are stored on the server, registered as internal materials, tagged to topics, and become eligible for ranking before web fallback.
               </p>
             </div>
@@ -229,12 +229,12 @@ export function MaterialUploadPage() {
             </div>
             <div className="space-y-2">
               <FieldLabel label="Source type" help={fieldHelp.source} />
-              <div className="flex overflow-hidden rounded-2xl border border-[#c29f60]/20 bg-[#12141a]/80 p-1">
+              <div className="flex overflow-hidden rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] p-1">
                 {(["file", "link"] as UploadSource[]).map((option) => (
                   <button
                     key={option}
                     type="button"
-                    className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium ${source === option ? "bg-[#c29f60] text-[#12141a]" : "text-[#f4ead6]"}`}
+                    className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium ${source === option ? "bg-[#c29f60] text-[var(--btn-primary-text,#12141a)]" : "text-[var(--input-text)]"}`}
                     onClick={() => setSource(option)}
                   >
                     {option === "file" ? "File" : "Link"}
@@ -247,7 +247,7 @@ export function MaterialUploadPage() {
                 <FieldLabel label="File" help={fieldHelp.file} />
                 <input
                   type="file"
-                  className="w-full rounded-2xl border border-[#c29f60]/20 bg-[#12141a]/80 px-4 py-3 text-sm text-[#f4ead6] file:mr-4 file:rounded-xl file:border-0 file:bg-[#c29f60] file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#12141a]"
+                  className="w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)] file:mr-4 file:rounded-xl file:border-0 file:bg-[#c29f60] file:px-3 file:py-2 file:text-sm file:font-medium file:text-[var(--btn-primary-text,#12141a)]"
                   onChange={(event) => {
                     const file = event.target.files?.[0] ?? null;
                     setSelectedFile(file);
@@ -266,7 +266,7 @@ export function MaterialUploadPage() {
             <div className="space-y-2">
               <FieldLabel label="Format" help={fieldHelp.material_type} />
               <select
-                className="w-full rounded-2xl border border-[#c29f60]/20 bg-[#12141a]/80 px-4 py-3 text-sm text-[#f4ead6]"
+                className="w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)]"
                 value={values.material_type}
                 onChange={(event) => {
                   setMaterialTypeTouched(true);
@@ -281,7 +281,7 @@ export function MaterialUploadPage() {
             <div className="space-y-2">
               <FieldLabel label="Level" help={fieldHelp.difficulty} />
               <select
-                className="w-full rounded-2xl border border-[#c29f60]/20 bg-[#12141a]/80 px-4 py-3 text-sm text-[#f4ead6]"
+                className="w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)]"
                 value={values.difficulty}
                 onChange={(event) => {
                   setDifficultyTouched(true);
@@ -315,7 +315,7 @@ export function MaterialUploadPage() {
             </div>
             <div className="space-y-2">
               <FieldLabel label="Publish" help={fieldHelp.is_published} />
-              <label className="flex items-center gap-3 rounded-2xl border border-[#c29f60]/20 bg-[#12141a]/80 px-4 py-3 text-sm text-[#f4ead6]">
+              <label className="flex items-center gap-3 rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)]">
                 <input
                   type="checkbox"
                   checked={values.is_published}
@@ -328,14 +328,14 @@ export function MaterialUploadPage() {
           <div className="mt-4 space-y-2">
             <FieldLabel label="Summary" help={fieldHelp.summary} />
             <textarea
-              className="min-h-32 w-full rounded-2xl border border-[#c29f60]/20 bg-[#12141a]/80 px-4 py-3 text-sm text-[#f4ead6] placeholder:text-[#dccfa6]/50"
+              className="min-h-32 w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)] placeholder:text-[var(--input-placeholder)]"
               placeholder="Summary or teaching note"
               value={values.summary}
               onChange={(event) => setValues((current) => ({ ...current, summary: event.target.value }))}
             />
           </div>
 
-          {error ? <div className="mt-4 rounded-2xl border border-[#4e1c24]/50 bg-[#2a0e12] px-4 py-3 text-sm text-[#c26060]">{error}</div> : null}
+          {error ? <div className="mt-4 rounded-2xl border border-[var(--badge-danger-border)] bg-[var(--badge-danger-bg)] px-4 py-3 text-sm text-[var(--badge-danger-text)]">{error}</div> : null}
           {success ? <div className="mt-4 rounded-2xl border border-emerald-900 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">{success}</div> : null}
 
           {uploaded ? (
@@ -345,7 +345,7 @@ export function MaterialUploadPage() {
           ) : null}
 
           <div className="mt-6 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm text-[#dccfa6]/70">
+            <div className="flex items-center gap-2 text-sm text-[var(--library-copy-color)]">
               <ShieldAlert className="h-4 w-4 text-[#c29f60]" />
               Only professor/admin accounts can upload trusted internal materials.
             </div>

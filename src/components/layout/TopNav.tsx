@@ -43,7 +43,7 @@ export function TopNav({ title = "Apollo", subtitle = "Learning library", role }
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
-        <Badge tone="info" className="bg-[#2c221d] text-[#f4ead6] border-[#4e232e]">{user?.name ?? role ?? "Learner"}</Badge>
+        <Badge tone="info">{user?.name ?? role ?? "Learner"}</Badge>
       </div>
     </header>
   );
