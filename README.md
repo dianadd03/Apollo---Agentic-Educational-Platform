@@ -119,9 +119,8 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 - [x] auth + role setup
 - [x] search bar
 - [x] internal search + web fallback
-- [ ] validation agent (partial)
-- [ ] difficulty ranking (partial)
-- [ ] sortable materials table
+- [x] validation agent
+- [x] difficulty ranking
 - [x] problem links aggregator
 - [x] foundational task generation
 - [x] code editor
