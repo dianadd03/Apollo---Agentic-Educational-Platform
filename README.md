@@ -21,7 +21,7 @@ Educational platform where students and professors **search for a technical topi
 - **PostgreSQL** + **pgvector** (semantic embeddings, HNSW index)
 - **SQLAlchemy** 2.0 + **Pydantic** 2.8
 - **LangChain** (langchain-community, google-genai, ollama)
-- **Tavily** (web search) + **DuckDuckGo** (fallback)
+- **Tavily** (web search)
 
 ---
 
