@@ -94,7 +94,7 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 
 ---
 
-# Roadmap — the 13 Epics (from MDS)
+# Roadmap — the 13 Epics 
 
 | # | Epic | Status |
 |---|------|--------|
@@ -114,28 +114,14 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 
 ---
 
-## Recommended MVP (from the document)
-
-- [x] auth + role setup
-- [x] search bar
-- [x] internal search + web fallback
-- [x] validation agent
-- [x] difficulty ranking
-- [x] problem links aggregator
-- [x] foundational task generation
-- [x] code editor
-- [x] categorized AI code review
-
----
-
 ## What is already done vs what still needs work
 
-**Already done:** role-based authentication, agentic Tavily + DuckDuckGo search, internal retrieval with pgvector, material validation, problem aggregation, foundational tasks, code review, user feedback, admin verification.
+**Already done:** role-based authentication, agentic Tavily, internal retrieval with pgvector, material validation, problem aggregation, foundational tasks, code review, user feedback, admin verification.
 
 **Still needs refinement:**
-- **Epic 9** — Suggestion ↔ code region mapping (line ranges/AST anchors), stale state after editing
-- **Epic 4** — Sortable table + "Why recommended" explanation
-- **Epic 10** — Structured orchestrator with retry policies per stage and typed schemas
+- Structured orchestrator with retry policies per stage and typed schemas
+- Larger problem dataset
+- Feedback from students to materials
 
 ---
 
