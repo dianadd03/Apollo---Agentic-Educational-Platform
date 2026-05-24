@@ -1,66 +1,66 @@
 # Apollo — Agentic Educational Platform
 
-Platformă educațională unde studenții și profesorii **caută un topic tehnic** (ex: "Dynamic Programming", "Graphs", "Backtracking") printr-o **search bar**, iar un **AI Orchestrator agentic** generează:
+Educational platform where students and professors **search for a technical topic** (e.g. "Dynamic Programming", "Graphs", "Backtracking") through a **search bar**, and an **agentic AI Orchestrator** generates:
 
-1. **Path de învățare curat** (materiale validate)
-2. **Probleme de practică** (Codeforces, LeetCode, AtCoder)
-3. **Task-uri fundamentale** (ex: "Implement BFS")
-4. **Code editor + AI code review** structurat (Bugs / Edge Cases / Optimizations / Styling)
+1. **Clean learning path** (validated materials)
+2. **Practice problems** (Codeforces, LeetCode, AtCoder)
+3. **Foundational tasks** (e.g. "Implement BFS")
+4. **Code editor + structured AI code review** (Bugs / Edge Cases / Optimizations / Styling)
 
 ---
 
-## Stack tehnologic
+## Technology stack
 
 ### Frontend (`/src/`)
 - **React** 18.3 + TypeScript + **Vite** 5.4
 - **React Router** 6.30, **Tailwind CSS** 3.4, **shadcn/ui** (Lucide icons)
-- Stocare token în `localStorage` (`apollo-library-token`)
+- Token storage in `localStorage` (`apollo-library-token`)
 
 ### Backend (`/backend/`)
 - **Python** + **FastAPI** + **Uvicorn**
-- **PostgreSQL** + **pgvector** (embeddings semantice, index HNSW)
+- **PostgreSQL** + **pgvector** (semantic embeddings, HNSW index)
 - **SQLAlchemy** 2.0 + **Pydantic** 2.8
 - **LangChain** (langchain-community, google-genai, ollama)
 - **Tavily** (web search) + **DuckDuckGo** (fallback)
 
 ---
 
-## Ce face platforma
+## What the platform does
 
-1. **Studenți** → creează *Topics* (cu nivel: beginner/intermediate/advanced) și caută materiale prin AI; primesc rezultate scorate (calitate + ușurință de înțelegere)
-2. **Profesori/Admini** → upload materiale (PDF, link-uri), verificare, publish/unpublish
-3. **Agent search** → `ReviewAgent` folosește `WebAgent` pentru Tavily (web, YouTube, archive.org, papers) și scorează materialele 0–100 pe calitate și accesibilitate → totul persistat în DB cu proveniență
+1. **Students** → create *Topics* (with level: beginner/intermediate/advanced) and search for materials through AI; they receive scored results (quality + ease of understanding)
+2. **Professors/Admins** → upload materials (PDFs, links), verify, publish/unpublish
+3. **Agent search** → `ReviewAgent` uses `WebAgent` for Tavily (web, YouTube, archive.org, papers) and scores materials from 0–100 for quality and accessibility → everything is persisted in the DB with provenance
 
 ---
 
-## Modele DB cheie
+## Key DB models
 
 - `User` (student/professor/admin), `Topic`, `UserTopic` (M2M)
 - `Material` (canonical_name, link, file_path, type, difficulty, **trust_level**, **quality_score**, **ease_score**, verified_by, is_published, is_active)
-- `MaterialChunk` cu **vector embeddings**
+- `MaterialChunk` with **vector embeddings**
 - `MaterialFeedback` (rating 1–5, usefulness)
-- `TopicSearchResult` + `TopicSearchResultItem` (audit trail al căutărilor)
+- `TopicSearchResult` + `TopicSearchResultItem` (audit trail for searches)
 
 ---
 
-## Endpoint-uri principale
+## Main endpoints
 
 - `/api/auth` — login, register, me
 - `/api/topics` — CRUD
 - `/api/materials` — upload, verify, activate
-- `/api/search-materials` — **endpoint-ul central**, returnează rezultate ranked
+- `/api/search-materials` — **central endpoint**, returns ranked results
 
 ---
 
-## Pagini frontend (`/src/pages/`)
+## Frontend pages (`/src/pages/`)
 
-`LoginPage`, `RegisterPage`, `LibraryPage` (dashboard cu topics), `TopicPage` (detalii topic), `CodingReviewPage`, `ManagedMaterialsPage` (admin), `MaterialUploadPage`
+`LoginPage`, `RegisterPage`, `LibraryPage` (dashboard with topics), `TopicPage` (topic details), `CodingReviewPage`, `ManagedMaterialsPage` (admin), `MaterialUploadPage`
 
 ---
 
-## Configurare
+## Configuration
 
-`.env` așteptat în backend:
+Expected `.env` in the backend:
 
 ```
 APOLLO_DATABASE_URL=postgresql://... (port 5434)
@@ -74,53 +74,53 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 
 ---
 
-## Probleme observate în cod
+## Observed issues in the code
 
-- Cheile pentru servicii externe trebuie setate în `.env` (`APOLLO_TAVILY_API_KEY`, opțional `LANGSMITH_API_KEY`)
-- `ReviewAgent` este încărcat dinamic cu shims peste LangChain — fragil; dacă LLM-ul local nu e disponibil, se cade pe scoring euristic
-- MVP funcțional: auth, search agentic, topic management, vector search, multi-role workflow
+- Keys for external services must be set in `.env` (`APOLLO_TAVILY_API_KEY`, optional `LANGSMITH_API_KEY`)
+- `ReviewAgent` is loaded dynamically with shims over LangChain — fragile; if the local LLM is not available, it falls back to heuristic scoring
+- Functional MVP: auth, agentic search, topic management, vector search, multi-role workflow
 
 ---
 
-## Fișiere cheie
+## Key files
 
-- `backend/main.py` — entry FastAPI
-- `backend/agents/review_agent.py` + `backend/agents/web_agent.py` — nucleul agentic pentru web search și scoring
-- `backend/services/material_search_service.py` — orchestrare căutare + persistare
-- `backend/db/models.py` — schema DB
+- `backend/main.py` — FastAPI entry
+- `backend/agents/review_agent.py` + `backend/agents/web_agent.py` — agentic core for web search and scoring
+- `backend/services/material_search_service.py` — search orchestration + persistence
+- `backend/db/models.py` — DB schema
 - `src/app/App.tsx` — routing
-- `src/services/api.ts` — client API
-- `src/context/AuthContext.tsx` — flux auth
+- `src/services/api.ts` — API client
+- `src/context/AuthContext.tsx` — auth flow
 
 ---
 
-# Roadmap — cele 13 Epics (din MDS)
+# Roadmap — the 13 Epics (from MDS)
 
 | # | Epic | Status |
 |---|------|--------|
-| 1 | **Auth, roluri, search bar topic** | Implementat (login, register, roluri student/professor/admin, TopicPage) |
-| 2 | **Retrieval materiale (DB intern + fallback web)** | Implementat (pgvector intern + Tavily/DuckDuckGo fallback) |
-| 3 | **Validare & quality assurance** (relevanță, retry când validarea eșuează) | Parțial — `ReviewAgent` există dar e stubbed/opțional |
-| 4 | **Ranking & learning path** (sortare după dificultate, tabel sortabil, explicații) | Parțial — scoring există, dar UI tabelar + "why recommended" lipsesc |
-| 5 | **Problem set aggregator** (Codeforces/LeetCode/AtCoder + general problems) | Implementat |
-| 6 | **Foundational task generation** ("Implement BFS" etc.) | Implementat |
-| 7 | **Code editor workspace** (paste cod, language selection, submit) | Implementat |
-| 8 | **AI Code Review Engine** (Bugs, Edge Cases, Optimizations, Styling) | Implementat |
-| 9 | **Review UX & code mapping** (highlight la hover, stale feedback) | Parțial |
-| 10 | **Agent orchestration & reliability** (retry, structured output) | Parțial — `ReviewAgent` + servicii backend, dar fără retry bounded complet |
-| 11 | **Trust, explainability, guardrails** (provenance, confidence) | Parțial — `TopicSearchResult` are audit trail, trust_level pe materiale |
-| 12 | **Admin controls** (verify materiale, feedback) | Implementat (`ManagedMaterialsPage`, `MaterialFeedback`) |
-| 13 | **Observability & data model scalabil** | Data model OK, telemetrie/tracing lipsește |
+| 1 | **Auth, roles, topic search bar** | Implemented (login, register, student/professor/admin roles, TopicPage) |
+| 2 | **Material retrieval (internal DB + web fallback)** | Implemented (internal pgvector + Tavily/DuckDuckGo fallback) |
+| 3 | **Validation & quality assurance** (relevance, retry when validation fails) | Partial — `ReviewAgent` exists but is stubbed/optional |
+| 4 | **Ranking & learning path** (sorting by difficulty, sortable table, explanations) | Partial — scoring exists, but table UI + "why recommended" are missing |
+| 5 | **Problem set aggregator** (Codeforces/LeetCode/AtCoder + general problems) | Implemented |
+| 6 | **Foundational task generation** ("Implement BFS" etc.) | Implemented |
+| 7 | **Code editor workspace** (paste code, language selection, submit) | Implemented |
+| 8 | **AI Code Review Engine** (Bugs, Edge Cases, Optimizations, Styling) | Implemented |
+| 9 | **Review UX & code mapping** (highlight on hover, stale feedback) | Partial |
+| 10 | **Agent orchestration & reliability** (retry, structured output) | Partial — `ReviewAgent` + backend services, but without complete bounded retry |
+| 11 | **Trust, explainability, guardrails** (provenance, confidence) | Partial — `TopicSearchResult` has an audit trail, trust_level on materials |
+| 12 | **Admin controls** (verify materials, feedback) | Implemented (`ManagedMaterialsPage`, `MaterialFeedback`) |
+| 13 | **Observability & scalable data model** | Data model OK, telemetry/tracing missing |
 
 ---
 
-## MVP recomandat (din document)
+## Recommended MVP (from the document)
 
 - [x] auth + role setup
 - [x] search bar
 - [x] internal search + web fallback
-- [ ] validation agent (parțial)
-- [ ] difficulty ranking (parțial)
+- [ ] validation agent (partial)
+- [ ] difficulty ranking (partial)
 - [ ] sortable materials table
 - [x] problem links aggregator
 - [x] foundational task generation
@@ -129,23 +129,23 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 
 ---
 
-## Ce ai deja vs ce mai trebuie făcut
+## What is already done vs what still needs work
 
-**Ai gata:** autentificare cu roluri, search agentic Tavily + DuckDuckGo, retrieval intern cu pgvector, validare materiale, problem aggregation, foundational tasks, code review, feedback users, admin verify.
+**Already done:** role-based authentication, agentic Tavily + DuckDuckGo search, internal retrieval with pgvector, material validation, problem aggregation, foundational tasks, code review, user feedback, admin verification.
 
-**Mai trebuie rafinat:**
-- **Epic 9** — Mapare suggestion ↔ regiune cod (line ranges/AST anchors), stale state după edit
-- **Epic 4** — Tabel sortabil + "Why recommended" explanation
-- **Epic 10** — Orchestrator structurat cu retry policies pe stage și schemas tipizate
+**Still needs refinement:**
+- **Epic 9** — Suggestion ↔ code region mapping (line ranges/AST anchors), stale state after editing
+- **Epic 4** — Sortable table + "Why recommended" explanation
+- **Epic 10** — Structured orchestrator with retry policies per stage and typed schemas
 
 ---
 
-## Ordinea livrării (recomandată în doc)
+## Delivery order (recommended in the doc)
 
 1. Auth + profile — **DONE**
 2. Search bar + topic orchestration — **DONE**
 3. Internal retrieval + web fallback — **DONE**
-4. **Validation + ranking** — *aici suntem acum*
+4. **Validation + ranking** — *this is where we are now*
 5. Results table
 6. Problem aggregation
 7. Foundational tasks
@@ -155,13 +155,13 @@ Vite proxy: `/api` → `http://127.0.0.1:8000`, `/uploads` → static.
 
 ---
 
-## Cum rulezi proiectul
+## How to run the project
 
 ### Backend
 ```bash
 cd backend
 pip install -r requirements.txt
-# setează variabilele în .env (vezi secțiunea Configurare)
+# set the variables in .env (see the Configuration section)
 uvicorn main:app --reload --port 8000
 ```
 
@@ -169,7 +169,7 @@ uvicorn main:app --reload --port 8000
 ```bash
 npm install
 npm run dev
-# deschide http://localhost:5173
+# open http://localhost:5173
 ```
 
 ---
