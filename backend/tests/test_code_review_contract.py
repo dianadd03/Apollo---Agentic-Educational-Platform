@@ -97,7 +97,7 @@ def test_review_code_flags_non_code_submission_without_calling_llm():
         code="This solution sorts the array by repeatedly swapping adjacent items.",
         language="Python",
     )
-    agent = CodeReviewAgent.__new__(CodeReviewAgent)
+    agent = CodeReviewAgent()
 
     review = agent.review_code(payload)
 
@@ -113,7 +113,7 @@ def test_review_code_flags_python_syntax_error_as_critical():
         code="def bubble_sort(arr)\n    return arr",
         language="Python",
     )
-    agent = CodeReviewAgent.__new__(CodeReviewAgent)
+    agent = CodeReviewAgent()
 
     review = agent.review_code(payload)
 
@@ -125,7 +125,7 @@ def test_review_code_flags_python_syntax_error_as_critical():
 
 def test_user_prompt_emphasizes_task_statement_as_source_of_truth():
     payload = make_payload()
-    agent = CodeReviewAgent.__new__(CodeReviewAgent)
+    agent = CodeReviewAgent()
 
     prompt = agent._build_user_prompt(payload)
 
