@@ -193,3 +193,55 @@ classDiagram
     Problem "1" --> "*" ProblemTopicLink : topic_links
     ProblemTopicLink "*" --> "1" Topic : topic_id
 ```
+
+---
+
+## 2. Component diagram — runtime architecture
+
+Shows how the React frontend talks to the FastAPI backend, how the backend
+delegates to services and AI agents, and which external systems the agents call.
+
+```mermaid
+flowchart TB
+    subgraph Client["Browser (React + Vite)"]
+        UI["UI pages<br/>(Topics, Materials, CodingReview)"]
+        APIClient["src/services/api client"]
+    end
+
+    subgraph Backend["FastAPI backend"]
+        direction TB
+        Routes["api/routes<br/>auth | topics | materials<br/>search | problems | code_review"]
+        Services["services<br/>auth | material | material_search<br/>topic | problem | storage<br/>review_search_adapter"]
+        Agents["agents<br/>rag_retrieval | web | extractor<br/>review | code_review<br/>foundational_task | learning_module<br/>problem_aggregator"]
+        Tools["tools<br/>websearch"]
+        Schemas["schemas (pydantic)"]
+        Deps["dependencies / config"]
+    end
+
+    subgraph Data["Data layer"]
+        DB[("PostgreSQL<br/>+ pgvector")]
+        Uploads[("/uploads<br/>static files")]
+    end
+
+    subgraph External["External / LLM"]
+        Ollama["Ollama<br/>(local & cloud models)"]
+        Tavily["Tavily search<br/>(primary web search)"]
+        DDG["DuckDuckGo<br/>(configurable fallback)"]
+        Codeforces["Codeforces / LeetCode<br/>problem providers"]
+    end
+
+    UI --> APIClient
+    APIClient -->|HTTP / JSON| Routes
+    Routes --> Schemas
+    Routes --> Services
+    Routes --> Deps
+    Services --> Agents
+    Services --> DB
+    Agents --> Tools
+    Agents --> DB
+    Tools --> Tavily
+    Tools -.->|configurable| DDG
+    Agents --> Ollama
+    Agents --> Codeforces
+    Routes --> Uploads
+```
