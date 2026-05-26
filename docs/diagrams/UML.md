@@ -245,3 +245,61 @@ flowchart TB
     Agents --> Codeforces
     Routes --> Uploads
 ```
+
+---
+
+## 3. Sequence diagram — hybrid RAG material search
+
+Captures the "search materials for a topic" path as actually implemented in
+`backend/agents/rag_retrieval_agent.py` and `backend/services/material_search_service.py`.
+The retrieval is keyword-based (SQL `ILIKE` on `Material.canonical_name`, `summary`
+and `MaterialTag.category`) plus a heuristic level calibration; the
+`MaterialChunk.embedding` HNSW index exists in the schema but is not queried by
+the current RAG agent. Web fallback runs through `ReviewSearchAdapter`, which
+internally uses `WebAgent` and the LLM-based `ReviewAgent` to score and
+calibrate external candidates.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Student
+    participant FE as React UI
+    participant API as FastAPI /api/search
+    participant SVC as MaterialSearchService
+    participant RAG as RagRetrievalAgent
+    participant DB as PostgreSQL
+    participant ADP as ReviewSearchAdapter
+    participant WEB as WebAgent
+    participant REV as ReviewAgent (LLM)
+    participant SRC as Tavily / DuckDuckGo
+
+    Student->>FE: open topic, request materials
+    FE->>API: GET /api/search?topic=...
+    API->>SVC: search_materials(topic, current_user)
+    SVC->>RAG: search(topic, max_results)
+
+    RAG->>DB: SELECT Material WHERE name/summary/tag ILIKE '%topic%'
+    DB-->>RAG: keyword-matched materials
+    Note over RAG: relevance + quality + trust scoring<br/>level calibration via keyword heuristics<br/>(EASY_SIGNALS / ADVANCED_SIGNALS / EXPERT_SIGNALS)
+
+    alt internal count ≥ MIN_INTERNAL_TOTAL (20) AND each level ≥ MIN_PER_LEVEL (7)
+        RAG-->>SVC: internal candidates only
+    else gaps in coverage or internal failure
+        RAG->>ADP: search_topic(topic, max_results)
+        ADP->>REV: review(topic, advanced)
+        Note over REV: ReviewAgent internally queries<br/>web search providers and uses<br/>LLM to score / format results
+        REV->>WEB: web search via tools
+        WEB->>SRC: provider call
+        SRC-->>WEB: raw URLs + snippets
+        WEB-->>REV: candidates
+        REV-->>ADP: scored review dicts
+        ADP-->>RAG: SearchMaterialsResponse (web)
+        Note over RAG: dedupe + rank + balance levels
+        RAG-->>SVC: merged internal + web candidates
+    end
+
+    SVC->>DB: persist TopicSearchResult + items (with rank, score, source)
+    SVC-->>API: SearchMaterialsResponse
+    API-->>FE: ranked materials with coverage_source
+    FE-->>Student: render list, badges by source_type
+```
