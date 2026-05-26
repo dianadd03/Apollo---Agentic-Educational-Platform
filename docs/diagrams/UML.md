@@ -226,7 +226,6 @@ flowchart TB
     subgraph External["External / LLM"]
         Ollama["Ollama<br/>(local & cloud models)"]
         Tavily["Tavily search<br/>(primary web search)"]
-        DDG["DuckDuckGo<br/>(configurable fallback)"]
         Codeforces["Codeforces / LeetCode<br/>problem providers"]
     end
 
@@ -240,7 +239,6 @@ flowchart TB
     Agents --> Tools
     Agents --> DB
     Tools --> Tavily
-    Tools -.->|configurable| DDG
     Agents --> Ollama
     Agents --> Codeforces
     Routes --> Uploads
