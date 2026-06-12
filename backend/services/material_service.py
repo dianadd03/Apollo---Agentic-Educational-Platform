@@ -6,7 +6,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import UploadFile
-from sqlalchemy import Select, select
+from sqlalchemy import Select, delete, select
 from sqlalchemy.orm import Session, selectinload
 
 from backend.config import get_settings
@@ -15,6 +15,7 @@ from backend.db.models import (
     MaterialSourceType,
     MaterialTag,
     MaterialTopicLink,
+    TopicSearchResultItem,
     TeacherAdminProfile,
     Topic,
     TrustLevel,
@@ -174,6 +175,13 @@ class MaterialService:
         material = self._load_material(material.id)
         return self.to_material_response(material, current_user.id)
 
+    def delete_material(self, material_id: str | UUID, current_user: User) -> None:
+        self._require_admin(current_user)
+        material = self._get_material(material_id)
+        self._db.execute(delete(TopicSearchResultItem).where(TopicSearchResultItem.material_id == material.id))
+        self._db.delete(material)
+        self._db.commit()
+
     def to_material_response(self, material: Material, current_user_id: UUID | None = None) -> MaterialResponse:
         del current_user_id
         return MaterialResponse(
@@ -291,6 +299,10 @@ class MaterialService:
         if current_user.role == UserRole.admin:
             return MaterialSourceType.admin_managed
         return MaterialSourceType.professor_managed
+
+    def _require_admin(self, current_user: User) -> None:
+        if current_user.role != UserRole.admin:
+            raise PermissionError("Only admin accounts can delete materials.")
 
     def _ensure_uuid(self, value: str | UUID) -> UUID:
         return value if isinstance(value, UUID) else UUID(value)

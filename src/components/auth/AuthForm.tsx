@@ -18,6 +18,8 @@ type AuthFormProps = {
 };
 
 export function AuthForm({ mode, values, onChange, onSubmit, loading, error }: AuthFormProps) {
+  const fieldClassName = "min-h-14 px-5 py-4 text-base";
+
   return (
     <div className="glass-panel w-full max-w-md p-8">
       <div className="mb-8 flex items-center gap-3">
@@ -33,9 +35,9 @@ export function AuthForm({ mode, values, onChange, onSubmit, loading, error }: A
       <div className="space-y-4">
         {mode === "register" ? (
           <>
-            <Input placeholder="Full name" value={values.name} onChange={(event) => onChange("name", event.target.value)} />
+            <Input autoComplete="off" className={fieldClassName} placeholder="Full name" value={values.name} onChange={(event) => onChange("name", event.target.value)} />
             <select
-              className="w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)]"
+              className="min-h-14 w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-5 py-4 text-base text-[var(--input-text)]"
               value={values.role ?? "student"}
               onChange={(event) => onChange("role", event.target.value)}
             >
@@ -45,8 +47,8 @@ export function AuthForm({ mode, values, onChange, onSubmit, loading, error }: A
             </select>
           </>
         ) : null}
-        <Input placeholder="Email address" type="email" value={values.email} onChange={(event) => onChange("email", event.target.value)} />
-        <Input placeholder="Password" type="password" value={values.password} onChange={(event) => onChange("password", event.target.value)} />
+        <Input autoComplete="off" className={fieldClassName} name="apollo-auth-email" placeholder="Email address" type="email" value={values.email} onChange={(event) => onChange("email", event.target.value)} />
+        <Input autoComplete="new-password" className={fieldClassName} name="apollo-auth-password" placeholder="Password" type="password" value={values.password} onChange={(event) => onChange("password", event.target.value)} />
       </div>
 
       {error ? <div className="mt-4 rounded-2xl border border-[var(--badge-danger-border)] bg-[var(--badge-danger-bg)] px-4 py-3 text-sm text-[var(--badge-danger-text)]">{error}</div> : null}

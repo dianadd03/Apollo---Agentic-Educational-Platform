@@ -1,4 +1,4 @@
-import { CheckCircle2, ExternalLink, Loader2, Power, RefreshCw } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, Power, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
@@ -17,6 +17,7 @@ export function ManagedMaterialsPage() {
   const [workingId, setWorkingId] = useState<string | null>(null);
 
   const isStaff = useMemo(() => user?.role === "professor" || user?.role === "admin", [user]);
+  const isAdmin = user?.role === "admin";
 
   const loadMaterials = async () => {
     setLoading(true);
@@ -59,6 +60,22 @@ export function ManagedMaterialsPage() {
       setMaterials((current) => current.map((item) => (item.id === material.id ? updated : item)));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update activation.");
+    } finally {
+      setWorkingId(null);
+    }
+  };
+
+  const handleDelete = async (material: ManagedMaterialResponse) => {
+    const confirmed = window.confirm(`Delete "${material.canonical_name}" from the database?`);
+    if (!confirmed) return;
+
+    setWorkingId(material.id);
+    try {
+      await api.deleteMaterial(material.id);
+      setMaterials((current) => current.filter((item) => item.id !== material.id));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to delete material.");
     } finally {
       setWorkingId(null);
     }
@@ -142,6 +159,12 @@ export function ManagedMaterialsPage() {
                               {workingId === material.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Power className="mr-2 h-4 w-4" />}
                               {material.is_active ? "Deactivate" : "Reactivate"}
                             </Button>
+                            {isAdmin ? (
+                              <Button variant="danger" disabled={workingId === material.id} onClick={() => void handleDelete(material)}>
+                                {workingId === material.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                Delete
+                              </Button>
+                            ) : null}
                           </div>
                         </td>
                       </tr>

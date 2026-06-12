@@ -29,6 +29,9 @@ class ReviewSearchAdapter:
                 asyncio.to_thread(self._get_review_agent().review, topic, advanced=self._advanced_search),
                 timeout=REVIEW_SEARCH_TIMEOUT_SECONDS,
             )
+        except ImportError as exc:
+            logger.warning("ReviewAgent is unavailable for topic %s: %s", topic, exc)
+            return self._empty_response(topic, "ReviewAgent is unavailable, so web fallback returned no results.")
         except TimeoutError:
             logger.exception("ReviewAgent timed out while searching topic %s.", topic)
             raise
@@ -45,6 +48,18 @@ class ReviewSearchAdapter:
                 total_results=len(selected),
                 coverage_source="web_only",
                 notes="Results produced by ReviewAgent.",
+            ),
+        )
+
+    def _empty_response(self, topic: str, notes: str) -> SearchMaterialsResponse:
+        return SearchMaterialsResponse(
+            topic=topic,
+            query_used=topic,
+            results=[],
+            search_metadata=SearchMetadata(
+                total_results=0,
+                coverage_source="web_only",
+                notes=notes,
             ),
         )
 

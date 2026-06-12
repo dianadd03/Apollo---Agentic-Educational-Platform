@@ -156,6 +156,11 @@ export const api = {
       body: JSON.stringify({ is_active: isActive }),
     }, true);
   },
+  deleteMaterial(materialId: string) {
+    return apiFetch<void>(`/api/materials/${materialId}`, {
+      method: "DELETE",
+    }, true);
+  },
   getProblemsForTopic(
     topic: string,
     options?: {

@@ -14,7 +14,7 @@ const DEFAULT_TOPIC_LEVEL = "beginner" as const;
 
 export function LibraryPage() {
   const navigate = useNavigate();
-  const { searchQuery } = useSearch();
+  const { searchQuery, setSearchQuery } = useSearch();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,6 +39,7 @@ export function LibraryPage() {
   }, []);
 
   const handleSearch = async (topicTitle: string) => {
+    setSearchQuery("");
     setSaving(true);
     try {
       const searchResponse = await api.searchMaterials(topicTitle, MATERIAL_SEARCH_LIMIT);

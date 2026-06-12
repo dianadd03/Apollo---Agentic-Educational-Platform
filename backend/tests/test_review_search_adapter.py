@@ -118,3 +118,17 @@ def test_search_topic_propagates_timeout(monkeypatch):
 
     with pytest.raises(TimeoutError):
         asyncio.run(adapter.search_topic("Graphs", max_results=5))
+
+
+def test_search_topic_returns_empty_response_when_review_agent_import_fails():
+    def broken_factory():
+        raise ImportError("cannot import name 'create_agent' from 'langchain.agents'")
+
+    adapter = ReviewSearchAdapter(review_agent_factory=broken_factory)
+
+    response = asyncio.run(adapter.search_topic("Graphs", max_results=5))
+
+    assert response.topic == "Graphs"
+    assert response.results == []
+    assert response.search_metadata.total_results == 0
+    assert response.search_metadata.notes == "ReviewAgent is unavailable, so web fallback returned no results."

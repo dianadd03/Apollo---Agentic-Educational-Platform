@@ -1,4 +1,5 @@
 import { Moon, Search, Sun } from "lucide-react";
+import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useSearch } from "@/context/SearchContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -15,6 +16,10 @@ export function TopNav({ title = "Apollo", subtitle = "Learning library", role }
   const { searchQuery, setSearchQuery } = useSearch();
   const { theme, toggleTheme } = useTheme();
   const nextTheme = theme === "dark" ? "light" : "dark";
+
+  useEffect(() => {
+    setSearchQuery("");
+  }, [setSearchQuery, user?.id]);
 
   return (
     <header className="glass-panel flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">

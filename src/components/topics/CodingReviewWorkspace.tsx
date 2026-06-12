@@ -279,10 +279,36 @@ function EditorSurface({
 }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
+  const [scrollTop, setScrollTop] = useState(0);
   const lineHeight = 28;
   const lines = code.length ? code.split("\n") : [""];
-  const highlightTop = hoveredRange ? (hoveredRange.lineStart - 1) * lineHeight + 14 : 0;
-  const highlightHeight = hoveredRange ? (hoveredRange.lineEnd - hoveredRange.lineStart + 1) * lineHeight : 0;
+  const clampedRange = hoveredRange
+    ? {
+        lineStart: Math.min(Math.max(hoveredRange.lineStart, 1), lines.length),
+        lineEnd: Math.min(Math.max(hoveredRange.lineEnd, hoveredRange.lineStart), lines.length),
+      }
+    : null;
+  const highlightTop = clampedRange ? (clampedRange.lineStart - 1) * lineHeight + 14 - scrollTop : 0;
+  const highlightHeight = clampedRange ? (clampedRange.lineEnd - clampedRange.lineStart + 1) * lineHeight : 0;
+
+  useEffect(() => {
+    if (!clampedRange || !textareaRef.current) return;
+
+    const textarea = textareaRef.current;
+    const lineTop = (clampedRange.lineStart - 1) * lineHeight;
+    const lineBottom = clampedRange.lineEnd * lineHeight;
+    const viewportTop = textarea.scrollTop;
+    const viewportBottom = viewportTop + textarea.clientHeight;
+
+    if (lineTop < viewportTop || lineBottom > viewportBottom) {
+      const nextScrollTop = Math.max(0, lineTop - lineHeight * 3);
+      textarea.scrollTop = nextScrollTop;
+      if (gutterRef.current) {
+        gutterRef.current.scrollTop = nextScrollTop;
+      }
+      setScrollTop(nextScrollTop);
+    }
+  }, [clampedRange, lineHeight]);
 
   const handleTabKey = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key !== "Tab") return;
@@ -375,8 +401,10 @@ function EditorSurface({
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={handleTabKey}
           onScroll={(event) => {
+            const nextScrollTop = event.currentTarget.scrollTop;
+            setScrollTop(nextScrollTop);
             if (gutterRef.current) {
-              gutterRef.current.scrollTop = event.currentTarget.scrollTop;
+              gutterRef.current.scrollTop = nextScrollTop;
             }
           }}
           spellCheck={false}
@@ -757,7 +785,7 @@ function extractLabeledValue(text: string, label: "input" | "output" | "expected
 }
 
 function parseLineRange(line: string): LineRange | null {
-  const match = line.match(/\bLines?\s+(\d+)(?:\s*[-]\s*(\d+))?/i);
+  const match = line.match(/\bLines?\s+(\d+)(?:\s*[-–—]\s*(\d+))?/i);
   if (!match) return null;
   const first = Number(match[1]);
   const second = Number(match[2] ?? match[1]);

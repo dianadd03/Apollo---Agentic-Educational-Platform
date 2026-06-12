@@ -15,6 +15,7 @@ from backend.db.models import (
     MaterialTag,
     MaterialTopicLink,
     MaterialType,
+    Topic,
     TopicLevel,
     TrustLevel,
 )
@@ -159,11 +160,20 @@ class RagRetrievalAgent:
         return self._rank_candidates(candidates)
 
     def _load_keyword_materials(self, db: Session, topic: str) -> list[Material]:
-        pattern = f"%{topic.strip()}%"
+        patterns = self._keyword_patterns(topic)
+        searchable_fields = (
+            Material.canonical_name,
+            Material.summary,
+            Material.difficulty.cast(String),
+            Material.material_type.cast(String),
+            MaterialTag.category,
+            Topic.title,
+        )
         stmt: Select[tuple[Material]] = (
             select(Material)
             .outerjoin(Material.tags)
             .outerjoin(Material.topic_links)
+            .outerjoin(Topic, Topic.id == MaterialTopicLink.topic_id)
             .options(
                 selectinload(Material.tags),
                 selectinload(Material.chunks),
@@ -172,11 +182,7 @@ class RagRetrievalAgent:
             .where(Material.is_active.is_(True), Material.is_published.is_(True))
             .where(
                 or_(
-                    Material.canonical_name.ilike(pattern),
-                    Material.summary.ilike(pattern),
-                    Material.difficulty.cast(String).ilike(pattern),
-                    Material.material_type.cast(String).ilike(pattern),
-                    MaterialTag.category.ilike(pattern),
+                    *(field.ilike(pattern) for pattern in patterns for field in searchable_fields),
                 )
             )
         )
@@ -359,7 +365,7 @@ class RagRetrievalAgent:
         return round(min(max(score, 0.0), 1.0), 3)
 
     def _relevance_score(self, material: Material, topic: str) -> float:
-        tokens = self._tokenize(topic)
+        tokens = self._query_tokens(topic)
         title_text = material.canonical_name.lower()
         summary_text = (material.summary or "").lower()
         tag_text = " ".join(tag.category.lower() for tag in material.tags)
@@ -570,3 +576,15 @@ class RagRetrievalAgent:
 
     def _tokenize(self, text: str) -> list[str]:
         return [token for token in "".join(char.lower() if char.isalnum() else " " for char in text).split() if token]
+
+    def _query_tokens(self, text: str) -> list[str]:
+        tokens: list[str] = []
+        for token in self._tokenize(text):
+            tokens.append(token)
+            if len(token) > 3 and token.endswith("s"):
+                tokens.append(token[:-1])
+        return list(dict.fromkeys(tokens))
+
+    def _keyword_patterns(self, text: str) -> list[str]:
+        terms = [text.strip(), *self._query_tokens(text)]
+        return [f"%{term}%" for term in dict.fromkeys(term for term in terms if term)]

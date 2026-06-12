@@ -135,6 +135,20 @@ def update_material(
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
+@router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_material(
+    material_id: str,
+    current_user: User = Depends(get_current_user),
+    service: MaterialService = Depends(get_material_service),
+) -> None:
+    try:
+        service.delete_material(material_id, current_user)
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
 @router.patch("/{material_id}/verify", response_model=MaterialResponse)
 def verify_material(
     material_id: str,

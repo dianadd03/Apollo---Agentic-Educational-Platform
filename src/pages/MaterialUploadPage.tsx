@@ -16,6 +16,8 @@ type UploadSource = "file" | "link";
 
 export function MaterialUploadPage() {
   const { user } = useAuth();
+  const fieldClassName = "min-h-14 px-5 py-4 text-base";
+  const selectClassName = "min-h-14 w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-5 py-4 text-base text-[var(--input-text)]";
   const [values, setValues] = useState({
     canonical_name: "",
     material_type: "pdf" as MaterialKind,
@@ -225,7 +227,7 @@ export function MaterialUploadPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <FieldLabel label="Material title" help={fieldHelp.canonical_name} />
-              <Input placeholder="Material title" value={values.canonical_name} onChange={(event) => setValues((current) => ({ ...current, canonical_name: event.target.value }))} />
+              <Input className={fieldClassName} placeholder="Material title" value={values.canonical_name} onChange={(event) => setValues((current) => ({ ...current, canonical_name: event.target.value }))} />
             </div>
             <div className="space-y-2">
               <FieldLabel label="Source type" help={fieldHelp.source} />
@@ -234,7 +236,7 @@ export function MaterialUploadPage() {
                   <button
                     key={option}
                     type="button"
-                    className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium ${source === option ? "bg-[#c29f60] text-[var(--btn-primary-text,#12141a)]" : "text-[var(--input-text)]"}`}
+                    className={`min-h-12 flex-1 rounded-xl px-5 py-3 text-base font-medium ${source === option ? "bg-[#c29f60] text-[var(--btn-primary-text,#12141a)]" : "text-[var(--input-text)]"}`}
                     onClick={() => setSource(option)}
                   >
                     {option === "file" ? "File" : "Link"}
@@ -247,7 +249,7 @@ export function MaterialUploadPage() {
                 <FieldLabel label="File" help={fieldHelp.file} />
                 <input
                   type="file"
-                  className="w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)] file:mr-4 file:rounded-xl file:border-0 file:bg-[#c29f60] file:px-3 file:py-2 file:text-sm file:font-medium file:text-[var(--btn-primary-text,#12141a)]"
+                  className="min-h-14 w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-5 py-4 text-base text-[var(--input-text)] file:mr-4 file:rounded-xl file:border-0 file:bg-[#c29f60] file:px-4 file:py-2 file:text-sm file:font-medium file:text-[var(--btn-primary-text,#12141a)]"
                   onChange={(event) => {
                     const file = event.target.files?.[0] ?? null;
                     setSelectedFile(file);
@@ -260,13 +262,13 @@ export function MaterialUploadPage() {
             ) : (
               <div className="space-y-2">
                 <FieldLabel label="Material link" help={fieldHelp.link} />
-                <Input placeholder="Material link" value={link} onChange={(event) => setLink(event.target.value)} />
+                <Input className={fieldClassName} placeholder="Material link" value={link} onChange={(event) => setLink(event.target.value)} />
               </div>
             )}
             <div className="space-y-2">
               <FieldLabel label="Format" help={fieldHelp.material_type} />
               <select
-                className="w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)]"
+                className={selectClassName}
                 value={values.material_type}
                 onChange={(event) => {
                   setMaterialTypeTouched(true);
@@ -281,7 +283,7 @@ export function MaterialUploadPage() {
             <div className="space-y-2">
               <FieldLabel label="Level" help={fieldHelp.difficulty} />
               <select
-                className="w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)]"
+                className={selectClassName}
                 value={values.difficulty}
                 onChange={(event) => {
                   setDifficultyTouched(true);
@@ -295,27 +297,27 @@ export function MaterialUploadPage() {
             </div>
             <div className="space-y-2">
               <FieldLabel label="Topics" help={fieldHelp.topic_titles} />
-              <Input placeholder="Topics (comma separated)" value={values.topic_titles} onChange={(event) => setValues((current) => ({ ...current, topic_titles: event.target.value }))} />
+              <Input className={fieldClassName} placeholder="Topics (comma separated)" value={values.topic_titles} onChange={(event) => setValues((current) => ({ ...current, topic_titles: event.target.value }))} />
             </div>
             <div className="space-y-2">
               <FieldLabel label="Tags" help={fieldHelp.tags} />
-              <Input placeholder="Tags (comma separated)" value={values.tags} onChange={(event) => setValues((current) => ({ ...current, tags: event.target.value }))} />
+              <Input className={fieldClassName} placeholder="Tags (comma separated)" value={values.tags} onChange={(event) => setValues((current) => ({ ...current, tags: event.target.value }))} />
             </div>
             <div className="space-y-2">
               <FieldLabel label="Quality score" help={fieldHelp.quality_score} />
-              <Input placeholder="Quality score (0-1)" value={values.quality_score} onChange={(event) => setValues((current) => ({ ...current, quality_score: event.target.value }))} />
+              <Input className={fieldClassName} placeholder="Quality score (0-1)" value={values.quality_score} onChange={(event) => setValues((current) => ({ ...current, quality_score: event.target.value }))} />
             </div>
             <div className="space-y-2">
               <FieldLabel label="Ease score" help={fieldHelp.ease_score} />
-              <Input placeholder="Ease score (0-1)" value={values.ease_score} onChange={(event) => setValues((current) => ({ ...current, ease_score: event.target.value }))} />
+              <Input className={fieldClassName} placeholder="Ease score (0-1)" value={values.ease_score} onChange={(event) => setValues((current) => ({ ...current, ease_score: event.target.value }))} />
             </div>
             <div className="space-y-2">
               <FieldLabel label="Trust score" help={fieldHelp.trust_score} />
-              <Input placeholder="Trust score (0-1)" value={values.trust_score} onChange={(event) => setValues((current) => ({ ...current, trust_score: event.target.value }))} />
+              <Input className={fieldClassName} placeholder="Trust score (0-1)" value={values.trust_score} onChange={(event) => setValues((current) => ({ ...current, trust_score: event.target.value }))} />
             </div>
             <div className="space-y-2">
               <FieldLabel label="Publish" help={fieldHelp.is_published} />
-              <label className="flex items-center gap-3 rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)]">
+              <label className="flex min-h-14 items-center gap-3 rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-5 py-4 text-base text-[var(--input-text)]">
                 <input
                   type="checkbox"
                   checked={values.is_published}
@@ -328,7 +330,7 @@ export function MaterialUploadPage() {
           <div className="mt-4 space-y-2">
             <FieldLabel label="Summary" help={fieldHelp.summary} />
             <textarea
-              className="min-h-32 w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--input-text)] placeholder:text-[var(--input-placeholder)]"
+              className="min-h-40 w-full rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--input-bg)] px-5 py-4 text-base text-[var(--input-text)] placeholder:text-[var(--input-placeholder)]"
               placeholder="Summary or teaching note"
               value={values.summary}
               onChange={(event) => setValues((current) => ({ ...current, summary: event.target.value }))}

@@ -301,6 +301,23 @@ def test_cached_web_material_from_database_is_marked_as_database_material():
     assert candidates[0].is_internal is False
 
 
+def test_internal_search_matches_uploaded_material_by_linked_topic_title():
+    topic = make_topic("Graph Theory")
+    material = make_material(
+        "Professor Course Notes",
+        TopicLevel.beginner,
+        summary="Lecture notes with examples.",
+    )
+    material.tags = [MaterialTag(category="course-notes", relevance=1.0)]
+    material.topic_links = [MaterialTopicLink(material_id=material.id, topic_id=topic.id, topic=topic)]
+    agent = RagRetrievalAgent(FakeDb([material]), FakeReviewSearch())
+
+    candidates = asyncio.run(agent.search_internal_materials(FakeDb([material]), "graphs"))
+
+    assert [candidate.title for candidate in candidates] == ["Professor Course Notes"]
+    assert candidates[0].source_of_result == "internal"
+
+
 def test_rag_web_fallback_uses_review_agent_output_for_level_and_scores():
     raw_result = web_candidate(
         "Graphs Learning Guide",

@@ -38,6 +38,7 @@ class FakeMaterialService:
         self.update_called = False
         self.upload_called = False
         self.list_called = False
+        self.delete_called = False
 
     def list_managed_materials(self, current_user):
         self.list_called = True
@@ -140,6 +141,11 @@ class FakeMaterialService:
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
         }
+
+    def delete_material(self, material_id, current_user):
+        self.delete_called = True
+        if current_user.role != UserRole.admin:
+            raise PermissionError("Only admin accounts can delete materials.")
 
 
 def make_user(role: UserRole) -> User:
@@ -325,5 +331,34 @@ def test_professor_can_create_and_update_material():
     assert service.update_called is True
     assert create_response.json()["canonical_name"] == "Intro to DP"
     assert update_response.json()["canonical_name"] == "Advanced DP"
+
+    app.dependency_overrides.clear()
+
+
+def test_admin_can_delete_material():
+    service = FakeMaterialService()
+    app.dependency_overrides[get_current_user] = lambda: make_user(UserRole.admin)
+    app.dependency_overrides[get_material_service] = lambda: service
+
+    client = TestClient(app)
+    response = client.delete("/api/materials/material-123")
+
+    assert response.status_code == 204
+    assert service.delete_called is True
+
+    app.dependency_overrides.clear()
+
+
+def test_professor_cannot_delete_material():
+    service = FakeMaterialService()
+    app.dependency_overrides[get_current_user] = lambda: make_user(UserRole.professor)
+    app.dependency_overrides[get_material_service] = lambda: service
+
+    client = TestClient(app)
+    response = client.delete("/api/materials/material-123")
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Only admin accounts can delete materials."
+    assert service.delete_called is True
 
     app.dependency_overrides.clear()
